@@ -121,6 +121,13 @@ body {
 }
 .coin--6 .coin__face { font-size: 2rem; }
 
+.coin--7 {
+  --dur: 12s; --delay: -2s;
+  width: 140px; height: 140px;
+  bottom: 8%; left: -30px;
+}
+.coin--7 .coin__face { font-size: 4rem; }
+
 @keyframes coinFloat {
   0%, 100% { transform: translateY(0px) rotate(-4deg); }
   33%       { transform: translateY(-22px) rotate(2deg); }
