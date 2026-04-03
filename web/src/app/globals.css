@@ -1,29 +1,28 @@
-/* ============================
-   RESET & BASE
-   ============================ */
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
+@import "tailwindcss";
 
 :root {
   --cream: #f0edf8;
   --ink: #12003a;
-  --purple: #9945FF;
+  --purple: #9945ff;
   --purple-light: #c084ff;
   --purple-dark: #7a2ee8;
   --purple-shadow: rgba(153, 69, 255, 0.4);
-  --sol-green: #14F195;
+  --sol-green: #14f195;
   --sol-green-dark: #0bc97a;
   --muted: #5c4d7a;
   --white: #ffffff;
   --header-bg: #1a0533;
   --radius-pill: 999px;
-  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
-  --font-serif: 'Instrument Serif', Georgia, serif;
+}
+
+@theme inline {
+  --color-cream: var(--cream);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-sol: var(--sol-green);
+  --color-purple: var(--purple);
+  --font-sans: var(--font-inter), system-ui, sans-serif;
+  --font-serif: var(--font-instrument), Georgia, serif;
 }
 
 html {
@@ -39,9 +38,70 @@ body {
   line-height: 1.6;
 }
 
-/* ============================
-   FLOATING COINS
-   ============================ */
+/* ——— Marketing hero ——— */
+.hero-section {
+  min-height: calc(100vh - 60px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 80px 24px 100px;
+}
+
+.hero-title {
+  font-size: clamp(2.2rem, 5.5vw, 4.2rem);
+  font-weight: 900;
+  line-height: 1.05;
+  color: var(--ink);
+  letter-spacing: -2px;
+  margin-bottom: 20px;
+}
+
+.hero-sub {
+  font-size: clamp(0.95rem, 2vw, 1.15rem);
+  color: var(--muted);
+  max-width: 520px;
+  line-height: 1.65;
+  margin-bottom: 36px;
+  font-weight: 400;
+}
+
+.hero-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-bottom: 28px;
+}
+
+.contribute-line {
+  font-size: 0.82rem;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  justify-content: center;
+}
+
+.contribute-line a {
+  color: var(--ink);
+  font-weight: 600;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border-bottom: 1.5px solid rgba(17, 17, 17, 0.3);
+  padding-bottom: 1px;
+  transition: border-color 0.2s;
+}
+
+.contribute-line a:hover {
+  border-color: var(--ink);
+}
+
+/* ——— Floating coins (landing) ——— */
 .coin {
   position: fixed;
   width: 130px;
@@ -61,8 +121,9 @@ body {
     inset 0 2px 12px rgba(255, 255, 255, 0.25);
   animation: coinFloat var(--dur, 9s) ease-in-out infinite;
   animation-delay: var(--delay, 0s);
-  transform:
-    translate(var(--parallax-x, 0px), var(--parallax-y, 0px)) rotate3d(1, 0, 0, var(--parallax-rx, 0deg)) rotate3d(0, 1, 0, var(--parallax-ry, 0deg));
+  transform: translate(var(--parallax-x, 0px), var(--parallax-y, 0px))
+    rotate3d(1, 0, 0, var(--parallax-rx, 0deg))
+    rotate3d(0, 1, 0, var(--parallax-ry, 0deg));
   transition: transform 0.15s ease-out;
   will-change: transform;
 }
@@ -78,7 +139,6 @@ body {
   user-select: none;
 }
 
-/* Individual coin positions & sizes */
 .coin--1 {
   --dur: 11s;
   --delay: 0s;
@@ -87,7 +147,6 @@ body {
   top: 18%;
   left: -10px;
 }
-
 .coin--1 .coin__face {
   font-size: 4.8rem;
 }
@@ -100,22 +159,8 @@ body {
   top: 8%;
   left: 14%;
 }
-
 .coin--2 .coin__face {
   font-size: 2.8rem;
-}
-
-.coin--3 {
-  --dur: 13s;
-  --delay: -6s;
-  width: 90px;
-  height: 90px;
-  top: 2%;
-  right: 12%;
-}
-
-.coin--3 .coin__face {
-  font-size: 2.5rem;
 }
 
 .coin--4 {
@@ -126,7 +171,6 @@ body {
   top: 10%;
   right: 80px;
 }
-
 .coin--4 .coin__face {
   font-size: 3.2rem;
 }
@@ -139,7 +183,6 @@ body {
   bottom: 0%;
   right: -10px;
 }
-
 .coin--5 .coin__face {
   font-size: 5.2rem;
 }
@@ -152,7 +195,6 @@ body {
   bottom: 12%;
   right: 18%;
 }
-
 .coin--6 .coin__face {
   font-size: 2rem;
 }
@@ -165,30 +207,24 @@ body {
   bottom: -1%;
   left: -10px;
 }
-
 .coin--7 .coin__face {
   font-size: 4rem;
 }
 
 @keyframes coinFloat {
-
   0%,
   100% {
     transform: translateY(0px) rotate(-4deg);
   }
-
   33% {
     transform: translateY(-22px) rotate(2deg);
   }
-
   66% {
     transform: translateY(10px) rotate(-6deg);
   }
 }
 
-/* ============================
-   HEADER / NAV
-   ============================ */
+/* ——— Header ——— */
 .site-header {
   position: sticky;
   top: 0;
@@ -230,13 +266,13 @@ body {
   font-size: 0.78rem;
   font-weight: 500;
   border: 1px solid rgba(255, 255, 255, 0.15);
+  text-decoration: none;
 }
 
 .nav-links {
   display: flex;
   align-items: center;
   gap: 6px;
-  list-style: none;
 }
 
 .nav-links a {
@@ -247,18 +283,15 @@ body {
   padding: 6px 14px;
   border-radius: var(--radius-pill);
   border: 1px solid transparent;
-  transition: color 0.2s, background 0.2s, border-color 0.2s;
+  transition:
+    color 0.2s,
+    background 0.2s,
+    border-color 0.2s;
 }
 
 .nav-links a:hover {
   color: var(--white);
   background: rgba(255, 255, 255, 0.08);
-}
-
-/* The "About" style outlined nav link */
-.nav-link--outlined {
-  border-color: rgba(255, 255, 255, 0.28) !important;
-  color: var(--white) !important;
 }
 
 .header-right {
@@ -286,58 +319,7 @@ body {
   color: var(--white);
 }
 
-/* ============================
-   HERO SECTION
-   ============================ */
-main {
-  position: relative;
-  z-index: 1;
-}
-
-.hero {
-  min-height: calc(100vh - 60px);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  padding: 80px 24px 100px;
-  position: relative;
-}
-
-#hero-heading {
-  font-family: var(--font-sans);
-  font-size: clamp(2.2rem, 5.5vw, 4.2rem);
-  font-weight: 900;
-  line-height: 1.05;
-  color: var(--ink);
-  letter-spacing: -2px;
-  margin-bottom: 20px;
-  white-space: nowrap;
-  max-width: none;
-}
-
-.hero-sub {
-  font-size: clamp(0.95rem, 2vw, 1.15rem);
-  color: var(--muted);
-  max-width: 520px;
-  line-height: 1.65;
-  margin-bottom: 36px;
-  font-weight: 400;
-}
-
-/* ============================
-   HERO ACTIONS (CTA + Search)
-   ============================ */
-.hero-actions {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
-  justify-content: center;
-  margin-bottom: 28px;
-}
-
+/* ——— Hero & buttons ——— */
 .btn-dark {
   background: var(--ink);
   color: var(--white);
@@ -348,9 +330,16 @@ main {
   border: none;
   border-radius: 8px;
   cursor: pointer;
-  transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+  transition:
+    background 0.2s,
+    transform 0.15s,
+    box-shadow 0.2s;
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.22);
   letter-spacing: 0.01em;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .btn-dark:hover {
@@ -363,6 +352,68 @@ main {
   transform: translateY(0);
 }
 
+.btn-wallet {
+  font-family: var(--font-sans);
+  font-size: 0.9rem;
+  font-weight: 700;
+  padding: 10px 18px;
+  border-radius: 8px;
+  border: 2px solid var(--ink);
+  background: var(--white);
+  color: var(--ink);
+  cursor: pointer;
+  transition:
+    transform 0.15s,
+    box-shadow 0.2s;
+}
+
+.btn-wallet:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(18, 0, 58, 0.12);
+}
+
+.btn-wallet:disabled {
+  opacity: 0.7;
+  cursor: wait;
+}
+
+.btn-wallet-connected {
+  font-family: var(--font-sans);
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 10px 16px;
+  border-radius: 8px;
+  border: none;
+  background: linear-gradient(135deg, var(--purple-light), var(--purple));
+  color: var(--white);
+  cursor: pointer;
+  box-shadow: 0 4px 14px var(--purple-shadow);
+}
+
+.btn-buy {
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  font-weight: 700;
+  padding: 14px 28px;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  background: linear-gradient(135deg, var(--sol-green), var(--sol-green-dark));
+  color: var(--ink);
+  width: 100%;
+  transition: transform 0.15s, box-shadow 0.2s;
+}
+
+.btn-buy:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(20, 241, 149, 0.35);
+}
+
+.btn-buy:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
 .search-bar {
   display: flex;
   align-items: center;
@@ -371,8 +422,10 @@ main {
   border-radius: 8px;
   padding: 10px 14px;
   gap: 10px;
-  width: 300px;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  width: min(100%, 300px);
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
 }
 
 .search-bar:focus-within {
@@ -395,53 +448,58 @@ main {
   color: rgba(17, 17, 17, 0.4);
 }
 
-.search-icon {
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: var(--muted);
-  display: flex;
-  align-items: center;
-  padding: 0;
-  transition: color 0.2s;
-  flex-shrink: 0;
+/* ——— Glass / app shell ——— */
+.app-main {
+  position: relative;
+  z-index: 1;
+  flex: 1;
 }
 
-.search-icon:hover {
-  color: var(--ink);
+.glass-card {
+  background: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(17, 17, 17, 0.1);
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(18, 0, 58, 0.08);
 }
 
-/* ============================
-   CONTRIBUTE LINE
-   ============================ */
-.contribute-line {
-  font-size: 0.82rem;
-  color: var(--muted);
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  justify-content: center;
+.skeleton {
+  animation: pulse-skel 1.2s ease-in-out infinite;
+  background: linear-gradient(
+    90deg,
+    rgba(17, 17, 17, 0.06) 25%,
+    rgba(17, 17, 17, 0.12) 50%,
+    rgba(17, 17, 17, 0.06) 75%
+  );
+  background-size: 200% 100%;
+  border-radius: 8px;
 }
 
-.contribute-line a {
-  color: var(--ink);
-  font-weight: 600;
-  text-decoration: none;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  border-bottom: 1.5px solid rgba(17, 17, 17, 0.3);
-  padding-bottom: 1px;
-  transition: border-color 0.2s;
+@keyframes pulse-skel {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
 }
 
-.contribute-line a:hover {
-  border-color: var(--ink);
+.fade-in {
+  animation: fadeIn 0.45s ease-out both;
 }
 
-/* ============================
-   RESPONSIVE
-   ============================ */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 @media (max-width: 768px) {
   .nav-links {
     display: none;
@@ -457,58 +515,8 @@ main {
     font-size: 0.82rem;
   }
 
-  .coin--1 {
-    width: 110px;
-    height: 110px;
-    left: -30px;
-  }
-
-  .coin--1 .coin__face {
-    font-size: 3.2rem;
-  }
-
-  .coin--5 {
-    width: 130px;
-    height: 130px;
-  }
-
-  .coin--5 .coin__face {
-    font-size: 3.6rem;
-  }
-
-  #hero-heading {
-    letter-spacing: -2px;
-  }
-
-  .hero-actions {
-    flex-direction: column;
-    width: 100%;
-    max-width: 360px;
-  }
-
-  .search-bar {
-    width: 100%;
-  }
-
-  .btn-dark {
-    width: 100%;
-    text-align: center;
-  }
-}
-
-@media (max-width: 480px) {
-
   .coin--2,
-  .coin--3,
   .coin--6 {
     display: none;
-  }
-
-  .hero {
-    padding: 60px 20px 80px;
-  }
-
-  #hero-heading {
-    font-size: 3rem;
   }
 }
