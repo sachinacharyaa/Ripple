@@ -1,9 +1,11 @@
 import Link from "next/link";
 import { AppChrome } from "@/components/layout/AppChrome";
+import { FloatingCoins } from "@/components/layout/FloatingCoins";
 
 export default function HomePage() {
   return (
     <AppChrome>
+      <FloatingCoins />
       <section className="hero-section fade-in" id="discover">
         <h1 className="hero-title">Go from 0 to 1$OL</h1>
         <p className="hero-sub">
