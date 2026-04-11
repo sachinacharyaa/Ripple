@@ -1,0 +1,142 @@
+import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
+import { useWallet } from "@solana/wallet-adapter-react";
+import { api } from "../../lib/api";
+import { formatProductPrice, productPublicUrl } from "../../lib/productUtils";
+import type { ProductShape } from "../../types/product";
+
+export function DashboardProductsPage() {
+  const { publicKey } = useWallet();
+  const wallet = publicKey?.toBase58() ?? "";
+  const [products, setProducts] = useState<ProductShape[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [q, setQ] = useState("");
+
+  useEffect(() => {
+    if (!wallet) return;
+    setLoading(true);
+    api
+      .get<ProductShape[]>(`/products/creator/${wallet}`)
+      .then((r) => setProducts(r.data))
+      .finally(() => setLoading(false));
+  }, [wallet]);
+
+  const filtered = useMemo(() => {
+    const s = q.trim().toLowerCase();
+    if (!s) return products;
+    return products.filter((p) => `${p.title} ${p.description}`.toLowerCase().includes(s));
+  }, [products, q]);
+
+  const totals = useMemo(() => {
+    const sales = filtered.reduce((a, p) => a + p.salesCount, 0);
+    const revenue = filtered.reduce((a, p) => {
+      if (p.currency === "USDC") return a;
+      return a + p.priceSol * p.salesCount;
+    }, 0);
+    return { sales, revenue };
+  }, [filtered]);
+
+  return (
+    <div className="gum-page">
+      <div className="gum-products-header">
+        <h1 className="gum-page__h1">Products</h1>
+        <div className="gum-products-header__actions">
+          <div className="gum-search-wrap">
+            <span className="gum-search-ico" aria-hidden>
+              ⌕
+            </span>
+            <input
+              type="search"
+              className="gum-search-input"
+              placeholder="Search products…"
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              aria-label="Search products"
+            />
+          </div>
+          <Link to="/dashboard/products/new" className="gum-btn gum-btn--pink">
+            New product
+          </Link>
+        </div>
+      </div>
+
+      <div className="gum-tabs">
+        <span className="gum-tab gum-tab--active">All products</span>
+        <span className="gum-tab gum-tab--muted">Affiliated</span>
+        <span className="gum-tab gum-tab--muted">Collabs</span>
+      </div>
+
+      {loading ? (
+        <p className="gum-muted">Loading…</p>
+      ) : (
+        <div className="gum-table-wrap">
+          <table className="gum-table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Sales</th>
+                <th>Revenue</th>
+                <th>Price</th>
+                <th>Status</th>
+                <th />
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="gum-table__empty">
+                    No products yet.{" "}
+                    <Link to="/dashboard/products/new" className="gum-link">
+                      Create one
+                    </Link>
+                  </td>
+                </tr>
+              ) : (
+                filtered.map((p) => {
+                  const rev = p.currency === "USDC" ? 0 : p.priceSol * p.salesCount;
+                  const status = p.status === "draft" ? "Draft" : "Published";
+                  return (
+                    <tr key={p._id}>
+                      <td>
+                        <div className="gum-table-name">
+                          {p.thumbnailUrl ? <img src={p.thumbnailUrl} alt="" className="gum-table-thumb" /> : <div className="gum-table-thumb gum-table-thumb--ph" />}
+                          <div>
+                            <div className="gum-table-name__title">{p.title}</div>
+                            <a href={productPublicUrl(p._id)} className="gum-table-name__url" target="_blank" rel="noreferrer">
+                              {productPublicUrl(p._id).replace(/^https?:\/\//, "")}
+                            </a>
+                          </div>
+                        </div>
+                      </td>
+                      <td>{p.salesCount}</td>
+                      <td>{p.currency === "USDC" ? "—" : `${rev.toFixed(2)} SOL`}</td>
+                      <td>{formatProductPrice(p)}</td>
+                      <td>
+                        <span className={`gum-status gum-status--${status === "Published" ? "live" : "draft"}`}>{status}</span>
+                      </td>
+                      <td>
+                        <Link to={`/p/${p._id}`} className="gum-link">
+                          View
+                        </Link>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+            {filtered.length > 0 ? (
+              <tfoot>
+                <tr className="gum-table__foot">
+                  <td>Total</td>
+                  <td>{totals.sales}</td>
+                  <td>{totals.revenue.toFixed(2)} SOL</td>
+                  <td colSpan={3} />
+                </tr>
+              </tfoot>
+            ) : null}
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
