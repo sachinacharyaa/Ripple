@@ -6,6 +6,7 @@ import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { api } from "./lib/api";
 import { formatProductPrice } from "./lib/productUtils";
+import { FormatProductDescription } from "./lib/richDescription";
 import type { ProductShape } from "./types/product";
 import { DashboardShell } from "./layouts/DashboardShell";
 import { DashboardHomePage } from "./pages/dashboard/DashboardHomePage";
@@ -13,25 +14,6 @@ import { DashboardProductsPage } from "./pages/dashboard/DashboardProductsPage";
 import { DashboardNewProductPage } from "./pages/dashboard/DashboardNewProductPage";
 
 type Product = ProductShape;
-
-function explorerTxUrl(signature: string) {
-  const cluster = import.meta.env.VITE_SOLANA_CLUSTER || "devnet";
-  if (cluster === "mainnet-beta") return `https://explorer.solana.com/tx/${signature}`;
-  return `https://explorer.solana.com/tx/${signature}?cluster=${encodeURIComponent(cluster)}`;
-}
-
-type Purchase = {
-  _id: string;
-  productId: Product;
-  buyerWallet: string;
-  txSignature: string;
-  amountSol: number;
-  status: string;
-};
-
-function formatSol(value: number) {
-  return `${value.toFixed(2)} SOL`;
-}
 
 function shorten(address: string) {
   if (!address) return "";
@@ -114,7 +96,6 @@ function Layout({ children, variant = "default" }: { children: ReactNode; varian
             <>
               <Link to="/">Home</Link>
               <Link to="/dashboard/home">Dashboard</Link>
-              <Link to="/history">History</Link>
             </>
           )}
         </nav>
@@ -256,7 +237,7 @@ function Home() {
             "Public product page with Buy Now flow",
             "On-chain payment verification",
             "Instant access unlock after purchase",
-            "Transaction history for buyers",
+            "Activity metrics on your dashboard home",
           ].map((item) => (
             <div className="card" key={item}>
               <div className="card-title">{item}</div>
@@ -340,7 +321,13 @@ function Home() {
                 ) : null}
                 <div className="tag">Creator</div>
                 <div className="card-title">{product.title}</div>
-                <p className="card-meta">{product.summary || product.description}</p>
+                <p className="card-meta">
+                  {product.summary ? (
+                    product.summary
+                  ) : (
+                    <FormatProductDescription text={product.description} />
+                  )}
+                </p>
                 <div className="product-price">{formatProductPrice(product)}</div>
               </Link>
             ))}
@@ -445,7 +432,9 @@ function ProductPage() {
           <div className="tag">Creator product</div>
           <h2 className="section-title" style={{ marginTop: "8px" }}>{product.title}</h2>
           {product.summary ? <p className="product-summary">{product.summary}</p> : null}
-          <p className="section-sub">{product.description}</p>
+          <p className="section-sub">
+            <FormatProductDescription text={product.description} />
+          </p>
           {product.productInfo ? (
             <div className="product-info-block">
               <div className="tag">What you get</div>
@@ -481,102 +470,6 @@ function ProductPage() {
   );
 }
 
-function History() {
-  const { publicKey } = useWallet();
-  const wallet = publicKey?.toBase58() ?? "";
-  const [tab, setTab] = useState<"buyer" | "creator">("buyer");
-  const [buyerItems, setBuyerItems] = useState<Purchase[]>([]);
-  const [creatorItems, setCreatorItems] = useState<Purchase[]>([]);
-  const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    if (!wallet) {
-      setBuyerItems([]);
-      setCreatorItems([]);
-      return;
-    }
-    setLoading(true);
-    const buyerReq = api.get(`/purchases/wallet/${wallet}`).then((r) => setBuyerItems(r.data));
-    const creatorReq = api.get(`/purchases/creator/${wallet}`).then((r) => setCreatorItems(r.data));
-    Promise.all([buyerReq, creatorReq]).finally(() => setLoading(false));
-  }, [wallet]);
-
-  const items = tab === "buyer" ? buyerItems : creatorItems;
-
-  return (
-    <Layout>
-      <section className="page-section">
-        <div className="section-head">
-          <div>
-            <div className="section-kicker">Transaction history</div>
-            <h2 className="section-title">Purchases &amp; earnings</h2>
-            <p className="section-sub">Buyer purchases and sales on your products.</p>
-          </div>
-        </div>
-
-        {!wallet ? (
-          <div className="card">
-            <div className="card-title">Connect to view history</div>
-            <p className="card-meta">Connect your wallet to see purchases and creator earnings.</p>
-            <div style={{ marginTop: "12px" }}>
-              <WalletMultiButton className="wallet-multi-btn" />
-            </div>
-          </div>
-        ) : (
-          <>
-            <div className="history-tabs">
-              <button type="button" className={tab === "buyer" ? "tab tab--active" : "tab"} onClick={() => setTab("buyer")}>
-                My purchases
-              </button>
-              <button type="button" className={tab === "creator" ? "tab tab--active" : "tab"} onClick={() => setTab("creator")}>
-                Creator earnings
-              </button>
-            </div>
-            {loading ? (
-              <div className="marketplace-grid">
-                {[1, 2, 3].map((k) => (
-                  <div className="card skeleton-card" key={k} aria-hidden>
-                    <div className="skeleton-line skeleton-line--title" />
-                    <div className="skeleton-line" />
-                    <div className="skeleton-line skeleton-line--short" />
-                  </div>
-                ))}
-              </div>
-            ) : items.length === 0 ? (
-              <div className="empty">
-                {tab === "buyer" ? (
-                  "No purchases yet. Explore the marketplace to buy content."
-                ) : (
-                  <>
-                    No sales yet.{" "}
-                    <Link to="/dashboard/products/new">Create a product</Link>.
-                  </>
-                )}
-              </div>
-            ) : (
-              <div className="marketplace-grid">
-                {items.map((item) => (
-                  <div className="card" key={item._id}>
-                    <div className="card-title">{item.productId?.title || "Product"}</div>
-                    <p className="card-meta">{item.productId?.description}</p>
-                    <p className="product-price">{formatSol(item.amountSol)}</p>
-                    {tab === "creator" ? (
-                      <p className="card-meta">Buyer: {shorten(item.buyerWallet)}</p>
-                    ) : null}
-                    <a className="btn btn-outline" href={explorerTxUrl(item.txSignature)} target="_blank" rel="noreferrer">
-                      View transaction
-                    </a>
-                  </div>
-                ))}
-              </div>
-            )}
-          </>
-        )}
-      </section>
-    </Layout>
-  );
-}
-
 export function App() {
   return (
     <Routes>
@@ -588,7 +481,6 @@ export function App() {
         <Route path="products/new" element={<DashboardNewProductPage />} />
       </Route>
       <Route path="/p/:id" element={<ProductPage />} />
-      <Route path="/history" element={<History />} />
     </Routes>
   );
 }

@@ -22,7 +22,6 @@ export function DashboardHomePage() {
   const [balanceSol, setBalanceSol] = useState<number | null>(null);
   const [products, setProducts] = useState<ProductShape[]>([]);
   const [purchases, setPurchases] = useState<PurchaseRow[]>([]);
-  const [buyerPurchases, setBuyerPurchases] = useState<PurchaseRow[]>([]);
 
   useEffect(() => {
     if (!publicKey) return;
@@ -33,7 +32,6 @@ export function DashboardHomePage() {
     if (!wallet) return;
     api.get<ProductShape[]>(`/products/creator/${wallet}`).then((r) => setProducts(r.data));
     api.get<PurchaseRow[]>(`/purchases/creator/${wallet}`).then((r) => setPurchases(r.data));
-    api.get<PurchaseRow[]>(`/purchases/wallet/${wallet}`).then((r) => setBuyerPurchases(r.data));
   }, [wallet]);
 
   const now = Date.now();
@@ -66,10 +64,10 @@ export function DashboardHomePage() {
     { title: "Make an impression", desc: "Customize your creator profile (coming soon).", done: gs.profile, icon: "🖌" },
     { title: "Showtime", desc: "Create your first product.", done: gs.product, icon: "🚀" },
     { title: "Build your tribe", desc: "Get your first follower on-chain.", done: gs.follower, icon: "⚡" },
-    { title: "Cha-ching", desc: "Make your first sale.", done: gs.sale, icon: "🪙" },
-    { title: "Money inbound", desc: "Track payouts from your sales.", done: gs.payout, icon: "💰" },
     { title: "Go live", desc: "Publish a product to the marketplace.", done: gs.listing, icon: "🌊" },
     { title: "Spread the word", desc: "Share a product link with buyers.", done: gs.share, icon: "🔗" },
+    { title: "Cha-ching", desc: "Make your first sale.", done: gs.sale, icon: "🪙" },
+    { title: "Money inbound", desc: "Track payouts from your sales.", done: gs.payout, icon: "💰" },
   ];
 
   return (
@@ -118,12 +116,6 @@ export function DashboardHomePage() {
         Followers and sales will show up here as they come in. For now,{" "}
         <Link to="/dashboard/products/new">create a product</Link> or browse the{" "}
         <a href="/#marketplace">marketplace</a>.
-        {buyerPurchases.length > 0 ? (
-          <>
-            {" "}
-            You have <Link to="/history">{buyerPurchases.length} purchase(s)</Link> in your library.
-          </>
-        ) : null}
       </p>
     </div>
   );

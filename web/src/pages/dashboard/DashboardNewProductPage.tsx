@@ -1,6 +1,7 @@
-import { type FormEvent, useEffect, useRef, useState } from "react";
+import { type ClipboardEvent, type FormEvent, useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { api } from "../../lib/api";
+import { FormatProductDescription, wrappingDelims } from "../../lib/richDescription";
 import { CRYPTO_OPTIONS, formatProductPrice, readFileAsDataUrl } from "../../lib/productUtils";
 import { productPublicUrl } from "../../lib/productUtils";
 import { useWallet } from "@solana/wallet-adapter-react";
@@ -27,10 +28,12 @@ export function DashboardNewProductPage() {
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [currencyOpen, setCurrencyOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const descriptionRef = useRef<HTMLTextAreaElement>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [createdId, setCreatedId] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [fmtActive, setFmtActive] = useState({ b: false, i: false, u: false });
 
   const [draft, setDraft] = useState({
     name: "",
@@ -113,6 +116,52 @@ export function DashboardNewProductPage() {
     void navigator.clipboard.writeText(productPublicUrl(createdId));
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const insertWrappedAtSelection = (raw: string) => {
+    const { open, close } = wrappingDelims(fmtActive);
+    if (!open) return;
+    const el = descriptionRef.current;
+    const wrapped = open + raw + close;
+    setDraft((d) => {
+      const value = d.description;
+      const start = el ? el.selectionStart : value.length;
+      const end = el ? el.selectionEnd : start;
+      const newValue = value.slice(0, start) + wrapped + value.slice(end);
+      const caret = start + wrapped.length;
+      requestAnimationFrame(() => {
+        el?.focus();
+        el?.setSelectionRange(caret, caret);
+      });
+      return { ...d, description: newValue };
+    });
+  };
+
+  const onBeforeInputDescription = (e: FormEvent<HTMLTextAreaElement>) => {
+    const { open } = wrappingDelims(fmtActive);
+    if (!open) return;
+    const ne = e.nativeEvent as InputEvent;
+    if (ne.inputType === "insertLineBreak" || ne.inputType === "insertParagraph") return;
+    if (ne.inputType.startsWith("delete")) return;
+    if (ne.inputType === "historyUndo" || ne.inputType === "historyRedo") return;
+    if (ne.inputType === "insertFromPaste") {
+      e.preventDefault();
+      return;
+    }
+    if (ne.inputType === "insertText" || ne.inputType === "insertCompositionText") {
+      if (ne.data == null || ne.data === "") return;
+      e.preventDefault();
+      insertWrappedAtSelection(ne.data);
+    }
+  };
+
+  const onPasteDescription = (e: ClipboardEvent<HTMLTextAreaElement>) => {
+    const { open } = wrappingDelims(fmtActive);
+    if (!open) return;
+    const text = e.clipboardData.getData("text/plain");
+    if (!text) return;
+    e.preventDefault();
+    insertWrappedAtSelection(text);
   };
 
   const previewProduct: Pick<ProductShape, "currency" | "priceSol" | "priceUsdc"> = {
@@ -280,16 +329,44 @@ export function DashboardNewProductPage() {
               <div className="gum-field">
                 <label className="gum-label">Description</label>
                 <div className="dash-editor-toolbar">
-                  <span>B</span>
-                  <span>I</span>
-                  <span>U</span>
-                  <span>Link</span>
-                  <span>Media</span>
+                  <button
+                    type="button"
+                    className={`dash-editor-toolbar__btn${fmtActive.b ? " dash-editor-toolbar__btn--active" : ""}`}
+                    title="Bold"
+                    aria-pressed={fmtActive.b}
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => setFmtActive((f) => ({ ...f, b: !f.b }))}
+                  >
+                    B
+                  </button>
+                  <button
+                    type="button"
+                    className={`dash-editor-toolbar__btn dash-editor-toolbar__btn--italic${fmtActive.i ? " dash-editor-toolbar__btn--active" : ""}`}
+                    title="Italic"
+                    aria-pressed={fmtActive.i}
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => setFmtActive((f) => ({ ...f, i: !f.i }))}
+                  >
+                    I
+                  </button>
+                  <button
+                    type="button"
+                    className={`dash-editor-toolbar__btn dash-editor-toolbar__btn--underline${fmtActive.u ? " dash-editor-toolbar__btn--active" : ""}`}
+                    title="Underline"
+                    aria-pressed={fmtActive.u}
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => setFmtActive((f) => ({ ...f, u: !f.u }))}
+                  >
+                    U
+                  </button>
                 </div>
                 <textarea
+                  ref={descriptionRef}
                   className="gum-textarea gum-textarea--editor"
                   placeholder="Describe your product…"
                   value={draft.description}
+                  onBeforeInput={onBeforeInputDescription}
+                  onPaste={onPasteDescription}
                   onChange={(e) => setDraft((d) => ({ ...d, description: e.target.value }))}
                   required
                   minLength={5}
@@ -305,48 +382,60 @@ export function DashboardNewProductPage() {
                   maxLength={2000}
                 />
               </div>
-              <div className="gum-upload-row">
-                <div className="gum-field">
-                  <label className="gum-label">Cover</label>
-                  <div className="dash-dropzone gum-dropzone">
-                    {draft.coverUrl ? <img src={draft.coverUrl} alt="" className="dash-preview-img dash-preview-img--wide" /> : <span className="dash-dropzone__placeholder">+ Upload cover</span>}
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="dash-file-input"
-                      onChange={async (e) => {
-                        const f = e.target.files?.[0];
-                        if (!f) return;
-                        try {
-                          const dataUrl = await readFileAsDataUrl(f);
-                          setDraft((d) => ({ ...d, coverUrl: dataUrl }));
-                        } catch (err) {
-                          setError(err instanceof Error ? err.message : "Upload failed");
-                        }
-                      }}
-                    />
-                  </div>
+              <div className="gum-field">
+                <label className="gum-label">Cover</label>
+                <div className="dash-dropzone gum-dropzone">
+                  {draft.coverUrl ? (
+                    <img src={draft.coverUrl} alt="" className="dash-preview-img dash-preview-img--wide" />
+                  ) : (
+                    <span className="dash-dropzone__plus" aria-hidden>
+                      +
+                    </span>
+                  )}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="dash-file-input"
+                    aria-label="Upload cover image"
+                    onChange={async (e) => {
+                      const f = e.target.files?.[0];
+                      if (!f) return;
+                      try {
+                        const dataUrl = await readFileAsDataUrl(f);
+                        setDraft((d) => ({ ...d, coverUrl: dataUrl }));
+                      } catch (err) {
+                        setError(err instanceof Error ? err.message : "Upload failed");
+                      }
+                    }}
+                  />
                 </div>
-                <div className="gum-field">
-                  <label className="gum-label">Thumbnail</label>
-                  <div className="dash-dropzone dash-dropzone--square gum-dropzone">
-                    {draft.thumbnailUrl ? <img src={draft.thumbnailUrl} alt="" className="dash-preview-img" /> : <span className="dash-dropzone__placeholder">+ Thumb</span>}
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="dash-file-input"
-                      onChange={async (e) => {
-                        const f = e.target.files?.[0];
-                        if (!f) return;
-                        try {
-                          const dataUrl = await readFileAsDataUrl(f);
-                          setDraft((d) => ({ ...d, thumbnailUrl: dataUrl }));
-                        } catch (err) {
-                          setError(err instanceof Error ? err.message : "Upload failed");
-                        }
-                      }}
-                    />
-                  </div>
+              </div>
+              <div className="gum-field">
+                <label className="gum-label">Thumbnail</label>
+                <div className="dash-dropzone dash-dropzone--square gum-dropzone">
+                  {draft.thumbnailUrl ? (
+                    <img src={draft.thumbnailUrl} alt="" className="dash-preview-img" />
+                  ) : (
+                    <span className="dash-dropzone__plus" aria-hidden>
+                      +
+                    </span>
+                  )}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="dash-file-input"
+                    aria-label="Upload thumbnail image"
+                    onChange={async (e) => {
+                      const f = e.target.files?.[0];
+                      if (!f) return;
+                      try {
+                        const dataUrl = await readFileAsDataUrl(f);
+                        setDraft((d) => ({ ...d, thumbnailUrl: dataUrl }));
+                      } catch (err) {
+                        setError(err instanceof Error ? err.message : "Upload failed");
+                      }
+                    }}
+                  />
                 </div>
               </div>
               <div className="gum-field">
@@ -377,16 +466,30 @@ export function DashboardNewProductPage() {
             <div className="gum-preview-title">Preview</div>
             <div className="dash-preview-card gum-preview-live">
               <div className="dash-preview-card__cover">
-                {draft.coverUrl ? <img src={draft.coverUrl} alt="" /> : <span>Cover</span>}
+                {draft.coverUrl ? <img src={draft.coverUrl} alt="" /> : <span className="dash-preview-card__cover-ph">+</span>}
+              </div>
+              <div className="dash-preview-card__thumb-below">
+                {draft.thumbnailUrl ? (
+                  <img src={draft.thumbnailUrl} alt="" />
+                ) : (
+                  <span className="dash-preview-card__thumb-ph" aria-hidden>
+                    +
+                  </span>
+                )}
               </div>
               <div className="dash-preview-card__body">
-                <div className="dash-preview-card__thumb">{draft.thumbnailUrl ? <img src={draft.thumbnailUrl} alt="" /> : null}</div>
-                <div>
-                  <div className="dash-preview-card__title">{draft.name || "Product"}</div>
-                  <div className="dash-preview-card__price">{formatProductPrice(previewProduct)}</div>
-                  <p className="dash-preview-card__summary">{draft.summary || draft.description || "Description preview"}</p>
-                  {draft.productInfo ? <p className="dash-preview-card__note">{draft.productInfo}</p> : null}
-                </div>
+                <div className="dash-preview-card__title">{draft.name || "Product"}</div>
+                <div className="dash-preview-card__price">{formatProductPrice(previewProduct)}</div>
+                <p className="dash-preview-card__summary">
+                  {draft.summary ? (
+                    draft.summary
+                  ) : draft.description ? (
+                    <FormatProductDescription text={draft.description} />
+                  ) : (
+                    "Description preview"
+                  )}
+                </p>
+                {draft.productInfo ? <p className="dash-preview-card__note dash-preview-card__note--inline">{draft.productInfo}</p> : null}
               </div>
               <p className="dash-preview-card__note">Buyers see this page after they pay with SOL.</p>
             </div>
