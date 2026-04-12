@@ -103,7 +103,7 @@ function Layout({ children, variant = "default" }: { children: ReactNode; varian
         </nav>
         <div className="header-right header-right--wallet">
           <Link to="/dashboard/home" className="dashboard-button">
-            Dashboard
+            Start selling
           </Link>
           <WalletMultiButton className="wallet-multi-btn" />
         </div>
@@ -527,10 +527,11 @@ function ProductPage() {
               <img src={product.coverUrl} alt="" />
             </div>
           ) : null}
+          {product.thumbnailUrl ? <img src={product.thumbnailUrl} alt="" className="product-public-thumb" /> : null}
           <div className="tag">Creator product</div>
-          <h2 className="section-title" style={{ marginTop: "8px" }}>{product.title}</h2>
+          <h2 className="section-title product-public-title">{product.title}</h2>
           {product.summary ? <p className="product-summary">{product.summary}</p> : null}
-          <p className="section-sub">
+          <p className="section-sub product-public-desc">
             <FormatProductDescription text={product.description} />
           </p>
           {product.productInfo ? (
@@ -539,11 +540,8 @@ function ProductPage() {
               <p className="section-sub">{product.productInfo}</p>
             </div>
           ) : null}
-          <p className="product-price">{formatProductPrice(product)}</p>
-          <p className="card-meta">Creator: {shorten(product.creatorWallet)}</p>
-          {status && <div className="notice" style={{ marginTop: "12px" }}>{status}</div>}
-          {error && <div className="error" style={{ marginTop: "12px" }}>{error}</div>}
-          <div style={{ marginTop: "16px", display: "flex", gap: "12px", flexWrap: "wrap" }}>
+          <div className="product-public-actions">
+            <div className="product-public-price">{formatProductPrice(product)}</div>
             <button
               className="btn btn-primary"
               disabled={busy || product.currency === "USDC"}
@@ -553,6 +551,9 @@ function ProductPage() {
             </button>
             <button className="btn btn-outline" onClick={() => navigate(-1)}>Back</button>
           </div>
+          <p className="card-meta product-public-creator">Creator: {shorten(product.creatorWallet)}</p>
+          {status && <div className="notice" style={{ marginTop: "12px" }}>{status}</div>}
+          {error && <div className="error" style={{ marginTop: "12px" }}>{error}</div>}
           {contentLink && (
             <div style={{ marginTop: "16px" }}>
               <div className="tag">Access unlocked</div>

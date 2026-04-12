@@ -1,5 +1,6 @@
 import { type ClipboardEvent, type FormEvent, useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import axios from "axios";
 import { api } from "../../lib/api";
 import { FormatProductDescription, descriptionToHtml } from "../../lib/richDescription";
 import { CRYPTO_OPTIONS, formatProductPrice, readFileAsDataUrl } from "../../lib/productUtils";
@@ -29,7 +30,6 @@ export function DashboardNewProductPage() {
   const [currencyOpen, setCurrencyOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const descriptionRef = useRef<HTMLDivElement>(null);
-  const publishOnceRef = useRef(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [createdProduct, setCreatedProduct] = useState<ProductShape | null>(null);
@@ -76,13 +76,16 @@ export function DashboardNewProductPage() {
 
   const publish = async (e: FormEvent) => {
     e.preventDefault();
-    if (!wallet || !canStep2) {
+    if (!wallet) {
+      setError("Connect your wallet first.");
+      return;
+    }
+    if (!canStep2) {
       setError("Fill description and a valid content URL (https://…).");
       return;
     }
     setSubmitting(true);
     setError("");
-    publishOnceRef.current = false;
     const price = Number(draft.priceAmount);
     try {
       const { data } = await api.post<ProductShape>("/products", {
@@ -100,13 +103,25 @@ export function DashboardNewProductPage() {
         creatorWallet: wallet,
         status: "draft",
       });
-      setCreatedProduct(data);
+      const published = await api.post<ProductShape>(`/products/${data._id}/publish`);
+      setCreatedProduct(published.data);
       if (typeof localStorage !== "undefined") {
         localStorage.setItem("ripple_gs_share", "1");
       }
       setStep(3);
-    } catch {
-      setError("Could not publish. Check fields and try again.");
+    } catch (err) {
+      if (axios.isAxiosError(err)) {
+        const data = err.response?.data as { message?: string; issues?: { message?: string }[] } | undefined;
+        if (!err.response) {
+          setError("API is unreachable. Make sure the backend is running on http://localhost:4000.");
+        } else if (data?.issues?.length) {
+          setError(data.issues[0]?.message || "Invalid data. Please review the fields.");
+        } else {
+          setError(data?.message || "Could not publish. Check fields and try again.");
+        }
+      } else {
+        setError("Could not publish. Check fields and try again.");
+      }
     } finally {
       setSubmitting(false);
     }
@@ -119,18 +134,7 @@ export function DashboardNewProductPage() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  useEffect(() => {
-    if (step !== 3 || !createdProduct) return;
-    if (createdProduct.status === "published") return;
-    if (publishOnceRef.current) return;
-    publishOnceRef.current = true;
-    api
-      .post<ProductShape>(`/products/${createdProduct._id}/publish`)
-      .then((r) => setCreatedProduct(r.data))
-      .catch(() => {
-        publishOnceRef.current = false;
-      });
-  }, [step, createdProduct]);
+  
 
   const htmlToMarkdown = (root: HTMLElement): string => {
     const walk = (node: Node): string => {

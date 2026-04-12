@@ -1495,6 +1495,7 @@ textarea {
 
 .product-public-card {
   overflow: hidden;
+  text-align: center;
 }
 
 .product-public-cover {
@@ -1507,6 +1508,42 @@ textarea {
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+.product-public-thumb {
+  width: 72px;
+  height: 72px;
+  border-radius: 16px;
+  object-fit: cover;
+  border: 2px solid rgba(18, 0, 58, 0.08);
+  margin: 6px auto 10px;
+}
+
+.product-public-title {
+  margin-top: 8px;
+}
+
+.product-public-desc {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.product-public-actions {
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.product-public-price {
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: var(--ink);
+}
+
+.product-public-creator {
+  margin-top: 6px;
 }
 
 .product-summary {
