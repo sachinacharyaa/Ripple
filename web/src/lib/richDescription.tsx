@@ -78,6 +78,36 @@ function wrapByOpen(open: string, inner: ReactNode, nk: () => string): ReactNode
   }
 }
 
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function wrapByOpenHtml(open: string, inner: string): string {
+  switch (open) {
+    case "***__":
+      return `<strong><em><u>${inner}</u></em></strong>`;
+    case "**__":
+      return `<strong><u>${inner}</u></strong>`;
+    case "*__":
+      return `<em><u>${inner}</u></em>`;
+    case "***":
+      return `<strong><em>${inner}</em></strong>`;
+    case "**":
+      return `<strong>${inner}</strong>`;
+    case "__":
+      return `<u>${inner}</u>`;
+    case "*":
+      return `<em>${inner}</em>`;
+    default:
+      return inner;
+  }
+}
+
 function parseSegment(s: string, nk: () => string): ReactNode[] {
   const out: ReactNode[] = [];
   let pos = 0;
@@ -105,6 +135,31 @@ function parseSegment(s: string, nk: () => string): ReactNode[] {
   return out;
 }
 
+function parseSegmentHtml(s: string): string {
+  let out = "";
+  let pos = 0;
+  while (pos < s.length) {
+    const next = findNextOpen(s, pos);
+    if (!next) {
+      out += escapeHtml(s.slice(pos));
+      break;
+    }
+    if (next.idx > pos) {
+      out += escapeHtml(s.slice(pos, next.idx));
+    }
+    const closeIdx = s.indexOf(next.close, next.idx + next.open.length);
+    if (closeIdx < 0) {
+      out += escapeHtml(s.slice(next.idx));
+      break;
+    }
+    const inner = s.slice(next.idx + next.open.length, closeIdx);
+    const innerHtml = parseSegmentHtml(inner);
+    out += wrapByOpenHtml(next.open, innerHtml);
+    pos = closeIdx + next.close.length;
+  }
+  return out;
+}
+
 /** Renders description with B/I/U markdown from the dashboard editor (including combined ***__…__***). */
 export function FormatProductDescription({ text }: { text: string }): ReactNode {
   if (!text) return null;
@@ -122,4 +177,13 @@ export function FormatProductDescription({ text }: { text: string }): ReactNode 
       ))}
     </>
   );
+}
+
+/** Converts description markdown to safe HTML for contenteditable display. */
+export function descriptionToHtml(text: string): string {
+  if (!text) return "";
+  return text
+    .split("\n")
+    .map((line) => parseSegmentHtml(line))
+    .join("<br>");
 }

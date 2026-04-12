@@ -1,7 +1,7 @@
 import { type ClipboardEvent, type FormEvent, useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { api } from "../../lib/api";
-import { FormatProductDescription, wrappingDelims } from "../../lib/richDescription";
+import { FormatProductDescription, descriptionToHtml } from "../../lib/richDescription";
 import { CRYPTO_OPTIONS, formatProductPrice, readFileAsDataUrl } from "../../lib/productUtils";
 import { productPublicUrl } from "../../lib/productUtils";
 import { useWallet } from "@solana/wallet-adapter-react";
@@ -28,13 +28,13 @@ export function DashboardNewProductPage() {
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [currencyOpen, setCurrencyOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
-  const descriptionRef = useRef<HTMLTextAreaElement>(null);
+  const descriptionRef = useRef<HTMLDivElement>(null);
+  const publishOnceRef = useRef(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
-  const [createdId, setCreatedId] = useState<string | null>(null);
+  const [createdProduct, setCreatedProduct] = useState<ProductShape | null>(null);
   const [copied, setCopied] = useState(false);
-  const [fmtActive, setFmtActive] = useState({ b: false, i: false, u: false });
-
+  const [toolbarState, setToolbarState] = useState({ bold: false, italic: false, underline: false });
   const [draft, setDraft] = useState({
     name: "",
     productType: "digital",
@@ -82,6 +82,7 @@ export function DashboardNewProductPage() {
     }
     setSubmitting(true);
     setError("");
+    publishOnceRef.current = false;
     const price = Number(draft.priceAmount);
     try {
       const { data } = await api.post<ProductShape>("/products", {
@@ -97,9 +98,9 @@ export function DashboardNewProductPage() {
         priceUsdc: draft.currency === "USDC" ? price : 0,
         productType: draft.productType,
         creatorWallet: wallet,
-        status: "published",
+        status: "draft",
       });
-      setCreatedId(data._id);
+      setCreatedProduct(data);
       if (typeof localStorage !== "undefined") {
         localStorage.setItem("ripple_gs_share", "1");
       }
@@ -112,57 +113,134 @@ export function DashboardNewProductPage() {
   };
 
   const copyLink = () => {
-    if (!createdId) return;
-    void navigator.clipboard.writeText(productPublicUrl(createdId));
+    if (!createdProduct) return;
+    void navigator.clipboard.writeText(productPublicUrl(createdProduct));
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const insertWrappedAtSelection = (raw: string) => {
-    const { open, close } = wrappingDelims(fmtActive);
-    if (!open) return;
-    const el = descriptionRef.current;
-    const wrapped = open + raw + close;
-    setDraft((d) => {
-      const value = d.description;
-      const start = el ? el.selectionStart : value.length;
-      const end = el ? el.selectionEnd : start;
-      const newValue = value.slice(0, start) + wrapped + value.slice(end);
-      const caret = start + wrapped.length;
-      requestAnimationFrame(() => {
-        el?.focus();
-        el?.setSelectionRange(caret, caret);
+  useEffect(() => {
+    if (step !== 3 || !createdProduct) return;
+    if (createdProduct.status === "published") return;
+    if (publishOnceRef.current) return;
+    publishOnceRef.current = true;
+    api
+      .post<ProductShape>(`/products/${createdProduct._id}/publish`)
+      .then((r) => setCreatedProduct(r.data))
+      .catch(() => {
+        publishOnceRef.current = false;
       });
-      return { ...d, description: newValue };
+  }, [step, createdProduct]);
+
+  const htmlToMarkdown = (root: HTMLElement): string => {
+    const walk = (node: Node): string => {
+      if (node.nodeType === Node.TEXT_NODE) {
+        return (node.textContent ?? "").replace(/\u00a0/g, " ");
+      }
+      if (node.nodeType !== Node.ELEMENT_NODE) return "";
+      const el = node as HTMLElement;
+      const tag = el.tagName.toLowerCase();
+      const inner = Array.from(el.childNodes).map(walk).join("");
+      switch (tag) {
+        case "strong":
+        case "b":
+          return `**${inner}**`;
+        case "em":
+        case "i":
+          return `*${inner}*`;
+        case "u":
+          return `__${inner}__`;
+        case "br":
+          return "\n";
+        case "div":
+        case "p":
+          return inner + "\n";
+        default:
+          return inner;
+      }
+    };
+
+    const raw = Array.from(root.childNodes).map(walk).join("");
+    return raw
+      .replace(/\n{3,}/g, "\n\n")
+      .replace(/[ \t]+\n/g, "\n")
+      .replace(/\n+$/g, "");
+  };
+
+  const syncDescriptionFromEditor = () => {
+    const el = descriptionRef.current;
+    if (!el) return;
+    const markdown = htmlToMarkdown(el);
+    setDraft((d) => ({ ...d, description: markdown }));
+  };
+
+  const syncToolbarState = () => {
+    const root = descriptionRef.current;
+    if (!root) return;
+    const sel = document.getSelection();
+    if (!sel) return;
+    const anchor = sel.anchorNode;
+    const focus = sel.focusNode;
+    const withinEditor = (node: Node | null) => (node ? root.contains(node) : false);
+    if (!withinEditor(anchor) && !withinEditor(focus)) return;
+    setToolbarState({
+      bold: document.queryCommandState("bold"),
+      italic: document.queryCommandState("italic"),
+      underline: document.queryCommandState("underline"),
     });
   };
 
-  const onBeforeInputDescription = (e: FormEvent<HTMLTextAreaElement>) => {
-    const { open } = wrappingDelims(fmtActive);
-    if (!open) return;
-    const ne = e.nativeEvent as InputEvent;
-    if (ne.inputType === "insertLineBreak" || ne.inputType === "insertParagraph") return;
-    if (ne.inputType.startsWith("delete")) return;
-    if (ne.inputType === "historyUndo" || ne.inputType === "historyRedo") return;
-    if (ne.inputType === "insertFromPaste") {
-      e.preventDefault();
-      return;
-    }
-    if (ne.inputType === "insertText" || ne.inputType === "insertCompositionText") {
-      if (ne.data == null || ne.data === "") return;
-      e.preventDefault();
-      insertWrappedAtSelection(ne.data);
-    }
+  const applyBold = () => {
+    descriptionRef.current?.focus();
+    document.execCommand("bold");
+    syncDescriptionFromEditor();
+    syncToolbarState();
+  };
+  const applyItalic = () => {
+    descriptionRef.current?.focus();
+    document.execCommand("italic");
+    syncDescriptionFromEditor();
+    syncToolbarState();
+  };
+  const applyUnderline = () => {
+    descriptionRef.current?.focus();
+    document.execCommand("underline");
+    syncDescriptionFromEditor();
+    syncToolbarState();
   };
 
-  const onPasteDescription = (e: ClipboardEvent<HTMLTextAreaElement>) => {
-    const { open } = wrappingDelims(fmtActive);
-    if (!open) return;
-    const text = e.clipboardData.getData("text/plain");
-    if (!text) return;
-    e.preventDefault();
-    insertWrappedAtSelection(text);
+  const editorInitialized = useRef(false);
+
+  useEffect(() => {
+    if (step !== 2) {
+      editorInitialized.current = false;
+      return;
+    }
+    const el = descriptionRef.current;
+    if (!el || editorInitialized.current) return;
+    el.innerHTML = descriptionToHtml(draft.description);
+    editorInitialized.current = true;
+    syncToolbarState();
+  }, [step, draft.description]);
+
+  const onEditorInput = () => {
+    syncDescriptionFromEditor();
+    syncToolbarState();
   };
+
+  const onEditorPaste = (e: ClipboardEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    const text = e.clipboardData.getData("text/plain");
+    document.execCommand("insertText", false, text);
+    syncToolbarState();
+  };
+
+  useEffect(() => {
+    if (step !== 2) return;
+    const onSelection = () => syncToolbarState();
+    document.addEventListener("selectionchange", onSelection);
+    return () => document.removeEventListener("selectionchange", onSelection);
+  }, [step]);
 
   const previewProduct: Pick<ProductShape, "currency" | "priceSol" | "priceUsdc"> = {
     currency: draft.currency,
@@ -316,8 +394,6 @@ export function DashboardNewProductPage() {
           <div className="gum-customize-form">
             <div className="gum-workflow-tabs">
               <span className="gum-workflow-tab gum-workflow-tab--active">Product</span>
-              <span className="gum-workflow-tab">Content</span>
-              <span className="gum-workflow-tab">Receipt</span>
               <span className="gum-workflow-tab">Share</span>
             </div>
 
@@ -331,45 +407,49 @@ export function DashboardNewProductPage() {
                 <div className="dash-editor-toolbar">
                   <button
                     type="button"
-                    className={`dash-editor-toolbar__btn${fmtActive.b ? " dash-editor-toolbar__btn--active" : ""}`}
+                    className={`dash-editor-toolbar__btn${toolbarState.bold ? " dash-editor-toolbar__btn--active" : ""}`}
                     title="Bold"
-                    aria-pressed={fmtActive.b}
                     onMouseDown={(e) => e.preventDefault()}
-                    onClick={() => setFmtActive((f) => ({ ...f, b: !f.b }))}
+                    onClick={applyBold}
+                    aria-pressed={toolbarState.bold}
                   >
                     B
                   </button>
                   <button
                     type="button"
-                    className={`dash-editor-toolbar__btn dash-editor-toolbar__btn--italic${fmtActive.i ? " dash-editor-toolbar__btn--active" : ""}`}
+                    className={`dash-editor-toolbar__btn dash-editor-toolbar__btn--italic${toolbarState.italic ? " dash-editor-toolbar__btn--active" : ""}`}
                     title="Italic"
-                    aria-pressed={fmtActive.i}
                     onMouseDown={(e) => e.preventDefault()}
-                    onClick={() => setFmtActive((f) => ({ ...f, i: !f.i }))}
+                    onClick={applyItalic}
+                    aria-pressed={toolbarState.italic}
                   >
                     I
                   </button>
                   <button
                     type="button"
-                    className={`dash-editor-toolbar__btn dash-editor-toolbar__btn--underline${fmtActive.u ? " dash-editor-toolbar__btn--active" : ""}`}
+                    className={`dash-editor-toolbar__btn dash-editor-toolbar__btn--underline${toolbarState.underline ? " dash-editor-toolbar__btn--active" : ""}`}
                     title="Underline"
-                    aria-pressed={fmtActive.u}
                     onMouseDown={(e) => e.preventDefault()}
-                    onClick={() => setFmtActive((f) => ({ ...f, u: !f.u }))}
+                    onClick={applyUnderline}
+                    aria-pressed={toolbarState.underline}
                   >
                     U
                   </button>
                 </div>
-                <textarea
+                <div
                   ref={descriptionRef}
-                  className="gum-textarea gum-textarea--editor"
-                  placeholder="Describe your product…"
-                  value={draft.description}
-                  onBeforeInput={onBeforeInputDescription}
-                  onPaste={onPasteDescription}
-                  onChange={(e) => setDraft((d) => ({ ...d, description: e.target.value }))}
-                  required
-                  minLength={5}
+                  className="gum-rich-editor"
+                  role="textbox"
+                  aria-multiline="true"
+                  data-placeholder="Describe your product…"
+                  contentEditable
+                  suppressContentEditableWarning
+                  onInput={onEditorInput}
+                  onBlur={syncDescriptionFromEditor}
+                  onPaste={onEditorPaste}
+                  onKeyUp={syncToolbarState}
+                  onMouseUp={syncToolbarState}
+                  onFocus={syncToolbarState}
                 />
               </div>
               <div className="gum-field">
@@ -497,17 +577,17 @@ export function DashboardNewProductPage() {
         </div>
       ) : null}
 
-      {step === 3 && createdId ? (
+      {step === 3 && createdProduct ? (
         <div className="gum-share-panel">
           <p className="gum-share-lead">Your product is live. Share this link anywhere — buyers get the full product page with cover, price, and buy flow.</p>
           <div className="gum-share-url-row">
-            <code className="gum-share-url">{productPublicUrl(createdId)}</code>
+            <code className="gum-share-url">{productPublicUrl(createdProduct)}</code>
             <button type="button" className="gum-btn gum-btn--pink" onClick={copyLink}>
               {copied ? "Copied!" : "Copy link"}
             </button>
           </div>
           <div className="gum-share-actions">
-            <a href={productPublicUrl(createdId)} target="_blank" rel="noreferrer" className="gum-btn gum-btn--ghost">
+            <a href={productPublicUrl(createdProduct)} target="_blank" rel="noreferrer" className="gum-btn gum-btn--ghost">
               Open buyer page
             </a>
             <Link to="/dashboard/products" className="gum-link">

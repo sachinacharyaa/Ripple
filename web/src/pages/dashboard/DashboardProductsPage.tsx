@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { api } from "../../lib/api";
-import { formatProductPrice, productPublicUrl } from "../../lib/productUtils";
+import { formatProductPrice, productPublicPath, productPublicUrl } from "../../lib/productUtils";
 import type { ProductShape } from "../../types/product";
 
 export function DashboardProductsPage() {
@@ -102,8 +102,8 @@ export function DashboardProductsPage() {
                           {p.thumbnailUrl ? <img src={p.thumbnailUrl} alt="" className="gum-table-thumb" /> : <div className="gum-table-thumb gum-table-thumb--ph" />}
                           <div>
                             <div className="gum-table-name__title">{p.title}</div>
-                            <a href={productPublicUrl(p._id)} className="gum-table-name__url" target="_blank" rel="noreferrer">
-                              {productPublicUrl(p._id).replace(/^https?:\/\//, "")}
+                            <a href={productPublicUrl(p)} className="gum-table-name__url" target="_blank" rel="noreferrer">
+                              {productPublicUrl(p).replace(/^https?:\/\//, "")}
                             </a>
                           </div>
                         </div>
@@ -115,7 +115,7 @@ export function DashboardProductsPage() {
                         <span className={`gum-status gum-status--${status === "Published" ? "live" : "draft"}`}>{status}</span>
                       </td>
                       <td>
-                        <Link to={`/p/${p._id}`} className="gum-link">
+                        <Link to={productPublicPath(p)} className="gum-link">
                           View
                         </Link>
                       </td>

@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { api } from "./lib/api";
-import { formatProductPrice } from "./lib/productUtils";
+import { formatProductPrice, productPublicPath } from "./lib/productUtils";
 import { FormatProductDescription } from "./lib/richDescription";
 import type { ProductShape } from "./types/product";
 import { DashboardShell } from "./layouts/DashboardShell";
@@ -88,6 +88,7 @@ function Layout({ children, variant = "default" }: { children: ReactNode; varian
               <a href="/#discover">Discover</a>
               <a href="/#features">Features</a>
               <a href="/#creators">Creators</a>
+              <Link to="/products">Products</Link>
               <a href="/#marketplace" className="nav-link--outlined">
                 Marketplace
               </a>
@@ -95,6 +96,7 @@ function Layout({ children, variant = "default" }: { children: ReactNode; varian
           ) : (
             <>
               <Link to="/">Home</Link>
+              <Link to="/products">Products</Link>
               <Link to="/dashboard/home">Dashboard</Link>
             </>
           )}
@@ -315,7 +317,85 @@ function Home() {
         ) : (
           <div className="marketplace-grid">
             {filtered.map((product) => (
-              <Link to={`/p/${product._id}`} key={product._id} className="card product-card">
+              <Link to={productPublicPath(product)} key={product._id} className="card product-card">
+                {product.thumbnailUrl ? (
+                  <img src={product.thumbnailUrl} alt="" className="product-card__thumb" />
+                ) : null}
+                <div className="tag">Creator</div>
+                <div className="card-title">{product.title}</div>
+                <p className="card-meta">
+                  {product.summary ? (
+                    product.summary
+                  ) : (
+                    <FormatProductDescription text={product.description} />
+                  )}
+                </p>
+                <div className="product-price">{formatProductPrice(product)}</div>
+              </Link>
+            ))}
+          </div>
+        )}
+      </section>
+    </Layout>
+  );
+}
+
+function ProductsPage() {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [query, setQuery] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    api
+      .get("/products")
+      .then((res) => setProducts(res.data))
+      .catch(() => setError("Unable to load marketplace products."))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const filtered = useMemo(() => {
+    const lower = query.trim().toLowerCase();
+    if (!lower) return products;
+    return products.filter((p) => `${p.title} ${p.description}`.toLowerCase().includes(lower));
+  }, [products, query]);
+
+  return (
+    <Layout>
+      <section className="section" id="products">
+        <div className="section-head">
+          <div>
+            <div className="section-kicker">Live</div>
+            <h2 className="section-title">Products on Ripple</h2>
+            <p className="section-sub">Only published products show up here.</p>
+          </div>
+          <div className="search-bar" aria-label="Search products">
+            <input
+              type="text"
+              placeholder="Search products..."
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+            />
+          </div>
+        </div>
+        {error && <div className="error">{error}</div>}
+        {loading ? (
+          <div className="marketplace-grid">
+            {[1, 2, 3, 4, 5, 6].map((k) => (
+              <div className="card product-card skeleton-card" key={k} aria-hidden>
+                <div className="skeleton-line skeleton-line--tag" />
+                <div className="skeleton-line skeleton-line--title" />
+                <div className="skeleton-line" />
+                <div className="skeleton-line skeleton-line--short" />
+              </div>
+            ))}
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="empty">No published products yet.</div>
+        ) : (
+          <div className="marketplace-grid">
+            {filtered.map((product) => (
+              <Link to={productPublicPath(product)} key={product._id} className="card product-card">
                 {product.thumbnailUrl ? (
                   <img src={product.thumbnailUrl} alt="" className="product-card__thumb" />
                 ) : null}
@@ -339,20 +419,28 @@ function Home() {
 }
 
 function ProductPage() {
-  const { id } = useParams();
+  const { id, slug } = useParams();
   const navigate = useNavigate();
   const { connection } = useConnection();
   const { publicKey, sendTransaction } = useWallet();
   const wallet = publicKey?.toBase58() ?? "";
   const [product, setProduct] = useState<Product | null>(null);
+  const [loadError, setLoadError] = useState("");
   const [contentLink, setContentLink] = useState("");
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState("");
   const [error, setError] = useState("");
 
   useEffect(() => {
-    api.get(`/products/${id}`).then((res) => setProduct(res.data));
-  }, [id]);
+    if (!id && !slug) return;
+    const path = slug ? `/products/slug/${slug}` : `/products/${id}`;
+    setLoadError("");
+    setProduct(null);
+    api
+      .get(path)
+      .then((res) => setProduct(res.data))
+      .catch(() => setLoadError("Product not found."));
+  }, [id, slug]);
 
   useEffect(() => {
     if (!product || !wallet) return;
@@ -409,6 +497,16 @@ function ProductPage() {
       setBusy(false);
     }
   };
+
+  if (loadError) {
+    return (
+      <Layout>
+        <section className="page-section">
+          <div className="error">{loadError}</div>
+        </section>
+      </Layout>
+    );
+  }
 
   if (!product) {
     return (
@@ -474,6 +572,7 @@ export function App() {
   return (
     <Routes>
       <Route path="/" element={<Home />} />
+      <Route path="/products" element={<ProductsPage />} />
       <Route path="/dashboard" element={<DashboardShell />}>
         <Route index element={<Navigate to="home" replace />} />
         <Route path="home" element={<DashboardHomePage />} />
@@ -481,6 +580,7 @@ export function App() {
         <Route path="products/new" element={<DashboardNewProductPage />} />
       </Route>
       <Route path="/p/:id" element={<ProductPage />} />
+      <Route path="/:slug" element={<ProductPage />} />
     </Routes>
   );
 }

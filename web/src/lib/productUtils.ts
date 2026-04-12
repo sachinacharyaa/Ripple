@@ -24,6 +24,12 @@ export function readFileAsDataUrl(file: File): Promise<string> {
   });
 }
 
-export function productPublicUrl(productId: string) {
-  return `${window.location.origin}/p/${productId}`;
+export function productPublicPath(product: { _id: string; slug?: string }) {
+  if (product.slug && product.slug.trim().length > 0) return `/${product.slug}`;
+  return `/p/${product._id}`;
+}
+
+export function productPublicUrl(product: { _id: string; slug?: string } | string) {
+  if (typeof product === "string") return `${window.location.origin}/p/${product}`;
+  return `${window.location.origin}${productPublicPath(product)}`;
 }
