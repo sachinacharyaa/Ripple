@@ -683,6 +683,182 @@ textarea {
   text-decoration: none;
 }
 
+/* Discover marketplace (dark) */
+.page--discover {
+  background: #0a0a0f;
+  color: #f4f4f8;
+}
+
+.page--discover .site-header {
+  background: #0b0b0f;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.page--discover .logo {
+  color: #fff;
+}
+
+.page--discover .badge {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.page--discover .nav-links a {
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.page--discover .nav-links a:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.page--discover .nav-link--outlined {
+  border-color: rgba(255, 255, 255, 0.22) !important;
+  color: #fff !important;
+}
+
+.main--discover {
+  background: #0a0a0f;
+  min-height: calc(100vh - 64px);
+}
+
+.footer--discover {
+  background: #0b0b0f;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.footer--discover a {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.discover-shell {
+  padding-top: 50px;
+  max-width: min(90vw, 1500px);
+}
+
+.page--discover .section-kicker {
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.page--discover .section-title {
+  color: #fff;
+}
+
+.page--discover .section-sub {
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.page--discover .search-bar {
+  background: #121217;
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.page--discover .search-bar:focus-within {
+  border-color: rgba(255, 255, 255, 0.55);
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.08);
+}
+
+.page--discover .search-bar input {
+  color: #fff;
+}
+
+.page--discover .search-bar input::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.page--discover .card {
+  background: #141414;
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 18px 30px rgba(0, 0, 0, 0.35);
+}
+
+.page--discover .card-title {
+  color: #fff;
+}
+
+.page--discover .card-meta {
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.page--discover .tag {
+  background: rgba(255, 144, 232, 0.18);
+  color: #ffb8f0;
+}
+
+.page--discover .product-price {
+  color: #ff90e8;
+}
+
+.page--discover .skeleton-line {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.discover-block {
+  margin-top: 32px;
+}
+
+.discover-block:first-of-type {
+  margin-top: 0;
+}
+
+.discover-block__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.discover-block__title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #fff;
+  margin: 0;
+}
+
+.discover-block__meta {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.featured-grid {
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+
+.market-grid {
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}
+
+.product-card--featured .card-title {
+  font-size: 1.05rem;
+}
+
+.product-card--compact {
+  padding: 14px;
+}
+
+.product-card--compact .card-title {
+  font-size: 0.98rem;
+}
+
+.product-card--compact .card-meta {
+  font-size: 0.8rem;
+}
+
+.page--discover .empty {
+  background: #121217;
+  border-color: rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.page--discover .error {
+  background: rgba(255, 82, 82, 0.18);
+  color: #ffb4b4;
+}
+
 @media (max-width: 900px) {
   .nav-links {
     display: none;
@@ -1495,13 +1671,24 @@ textarea {
 
 .product-public-card {
   overflow: hidden;
-  text-align: center;
+  text-align: left;
 }
 
 .product-public-cover {
   margin: -20px -20px 16px;
   aspect-ratio: 21 / 9;
   background: var(--cream);
+}
+
+.product-public-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 24px;
+  align-items: start;
+}
+
+.product-public-main {
+  min-width: 0;
 }
 
 .product-public-cover img {
@@ -1516,7 +1703,7 @@ textarea {
   border-radius: 16px;
   object-fit: cover;
   border: 2px solid rgba(18, 0, 58, 0.08);
-  margin: 6px auto 10px;
+  margin: 6px 0 10px;
 }
 
 .product-public-title {
@@ -1524,16 +1711,21 @@ textarea {
 }
 
 .product-public-desc {
-  margin-left: auto;
-  margin-right: auto;
+  margin-left: 0;
+  margin-right: 0;
 }
 
 .product-public-actions {
   margin-top: 16px;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: stretch;
   gap: 12px;
+  padding: 16px;
+  border-radius: 14px;
+  border: 1px solid rgba(18, 0, 58, 0.08);
+  background: rgba(18, 0, 58, 0.03);
+  text-align: left;
 }
 
 .product-public-price {
@@ -1544,6 +1736,16 @@ textarea {
 
 .product-public-creator {
   margin-top: 6px;
+}
+
+.product-public-actions .btn {
+  width: 100%;
+}
+
+@media (max-width: 960px) {
+  .product-public-body {
+    grid-template-columns: 1fr;
+  }
 }
 
 .product-summary {
@@ -1853,6 +2055,182 @@ textarea {
   display: flex;
   gap: 12px;
   align-items: center;
+}
+
+.gum-discover-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 16px;
+}
+
+.gum-discover-card {
+  background: #101010;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 14px;
+  overflow: hidden;
+  text-decoration: none;
+  color: inherit;
+  display: flex;
+  flex-direction: column;
+  min-height: 260px;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+
+.gum-discover-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(255, 255, 255, 0.28);
+  box-shadow: 0 16px 30px rgba(0, 0, 0, 0.45);
+}
+
+.gum-discover-thumb {
+  width: 100%;
+  height: 140px;
+  object-fit: cover;
+  background: linear-gradient(135deg, rgba(255, 144, 232, 0.3), rgba(74, 222, 128, 0.18));
+}
+
+.gum-discover-thumb--ph {
+  background: linear-gradient(135deg, rgba(255, 144, 232, 0.18), rgba(255, 255, 255, 0.06));
+}
+
+.gum-discover-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 12px 14px;
+  flex: 1;
+}
+
+.gum-discover-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1.25;
+}
+
+.gum-discover-meta {
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.6);
+  line-height: 1.4;
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  min-height: 34px;
+}
+
+.gum-discover-row {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.gum-discover-creator {
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.6);
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.gum-discover-price {
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: #000;
+  background: #ff90e8;
+  padding: 4px 10px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.gum-discover-card--skeleton {
+  border-style: dashed;
+  box-shadow: none;
+}
+
+.gum-discover-card--skeleton .gum-discover-body .skeleton-line {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.gum-panel {
+  background: #0f0f0f;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 14px;
+  padding: 20px;
+  display: grid;
+  gap: 18px;
+}
+
+.gum-panel__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.gum-panel__title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+.gum-panel__sub {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.5);
+  margin-top: 6px;
+}
+
+.gum-panel__pill {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.8);
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.gum-wallet-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  font-size: 0.88rem;
+  color: rgba(255, 255, 255, 0.85);
+  word-break: break-all;
+}
+
+.gum-radio-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.gum-radio {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.gum-panel__actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.gum-panel__hint {
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.5);
 }
 
 .gum-search-wrap {

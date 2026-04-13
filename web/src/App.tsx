@@ -1,10 +1,18 @@
-﻿import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { Link, Navigate, Route, Routes, useLocation, useNavigate, useParams } from "react-router-dom";
-import { LAMPORTS_PER_SOL, PublicKey, SystemProgram, Transaction } from "@solana/web3.js";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
+import {
+  Link,
+  Navigate,
+  Route,
+  Routes,
+  useLocation,
+  useNavigate,
+  useParams,
+} from "react-router-dom";
 import { motion } from "framer-motion";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { api } from "./lib/api";
+import { handlePayment, RIPPLE_FEE_WALLET } from "./lib/payment";
 import { formatProductPrice, productPublicPath } from "./lib/productUtils";
 import { FormatProductDescription } from "./lib/richDescription";
 import type { ProductShape } from "./types/product";
@@ -12,6 +20,8 @@ import { DashboardShell } from "./layouts/DashboardShell";
 import { DashboardHomePage } from "./pages/dashboard/DashboardHomePage";
 import { DashboardProductsPage } from "./pages/dashboard/DashboardProductsPage";
 import { DashboardNewProductPage } from "./pages/dashboard/DashboardNewProductPage";
+import { DashboardDiscoverPage } from "./pages/dashboard/DashboardDiscoverPage";
+import { DashboardPaymentPage } from "./pages/dashboard/DashboardPaymentPage";
 
 type Product = ProductShape;
 
@@ -69,12 +79,26 @@ function Coins() {
   );
 }
 
-function Layout({ children, variant = "default" }: { children: ReactNode; variant?: "default" | "dashboard" }) {
+function Layout({
+  children,
+  variant = "default",
+}: {
+  children: ReactNode;
+  variant?: "default" | "dashboard" | "discover";
+}) {
   const location = useLocation();
   const isHome = location.pathname === "/";
 
   return (
-    <div className={variant === "dashboard" ? "page page--dashboard" : "page"}>
+    <div
+      className={
+        variant === "dashboard"
+          ? "page page--dashboard"
+          : variant === "discover"
+            ? "page page--discover"
+            : "page"
+      }
+    >
       <header className="site-header" id="top">
         <div className="header-left">
           <Link to="/" className="logo">
@@ -85,17 +109,18 @@ function Layout({ children, variant = "default" }: { children: ReactNode; varian
         <nav className="nav-links">
           {isHome ? (
             <>
-              <a href="/#discover">Discover</a>
+              <Link to="/dashboard/discover">Discover</Link>
               <a href="/#features">Features</a>
               <a href="/#creators">Creators</a>
               <Link to="/products">Products</Link>
-              <a href="/#marketplace" className="nav-link--outlined">
+              <Link to="/dashboard/discover" className="nav-link--outlined">
                 Marketplace
-              </a>
+              </Link>
             </>
           ) : (
             <>
               <Link to="/">Home</Link>
+              <Link to="/dashboard/discover">Discover</Link>
               <Link to="/products">Products</Link>
               <Link to="/dashboard/home">Dashboard</Link>
             </>
@@ -108,10 +133,32 @@ function Layout({ children, variant = "default" }: { children: ReactNode; varian
           <WalletMultiButton className="wallet-multi-btn" />
         </div>
       </header>
-      <main className={variant === "dashboard" ? "main main--dashboard-pro" : "main"}>{children}</main>
-      <footer className={variant === "dashboard" ? "footer footer--dashboard-pro" : "footer"}>
+      <main
+        className={
+          variant === "dashboard"
+            ? "main main--dashboard-pro"
+            : variant === "discover"
+              ? "main main--discover"
+              : "main"
+        }
+      >
+        {children}
+      </main>
+      <footer
+        className={
+          variant === "dashboard"
+            ? "footer footer--dashboard-pro"
+            : variant === "discover"
+              ? "footer footer--discover"
+              : "footer"
+        }
+      >
         Built for creators on Solana. Learn more on{" "}
-        <a href="https://github.com/sachinacharyaa/Ripple" target="_blank" rel="noreferrer">
+        <a
+          href="https://github.com/sachinacharyaa/Ripple"
+          target="_blank"
+          rel="noreferrer"
+        >
           GitHub
         </a>
         .
@@ -121,57 +168,39 @@ function Layout({ children, variant = "default" }: { children: ReactNode; varian
 }
 
 function Home() {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [query, setQuery] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-
-  useEffect(() => {
-    api
-      .get("/products")
-      .then((res) => setProducts(res.data))
-      .catch(() => setError("Unable to load marketplace products."))
-      .finally(() => setLoading(false));
-  }, []);
-
-  const filtered = useMemo(() => {
-    const lower = query.trim().toLowerCase();
-    if (!lower) return products;
-    return products.filter((p) => `${p.title} ${p.description}`.toLowerCase().includes(lower));
-  }, [products, query]);
-
   return (
     <Layout>
-      <section className="hero" id="discover">
+      <section className="hero" id="hero">
         <div className="hero-coins" aria-hidden="true">
           <Coins />
         </div>
         <div className="hero-content">
-        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="hero-tag">
-          Decentralized creator monetization
-        </motion.div>
-        <motion.h1 initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} className="hero-title">
-          Go from 0 to 1$OL
-        </motion.h1>
-        <p className="hero-sub">
-          Ripple lets anyone sell digital content, accept instant crypto payments, and unlock access with a wallet.
-        </p>
-        <div className="hero-actions">
-          <Link to="/dashboard/home" className="btn btn-primary">
-            Start selling
-          </Link>
-          <a href="/#marketplace" className="btn btn-secondary">
-            Explore marketplace
-          </a>
-        </div>
-        <div className="search-bar" aria-label="Search marketplace">
-          <input
-            type="text"
-            placeholder="Search marketplace..."
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-          />
-        </div>
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="hero-tag"
+          >
+            Decentralized creator monetization
+          </motion.div>
+          <motion.h1
+            initial={{ opacity: 0, y: 18 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="hero-title"
+          >
+            Go from 0 to 1$OL
+          </motion.h1>
+          <p className="hero-sub">
+            Ripple lets anyone sell digital content, accept instant crypto
+            payments, and unlock access with a wallet.
+          </p>
+          <div className="hero-actions">
+            <Link to="/dashboard/home" className="btn btn-primary">
+              Start selling
+            </Link>
+            <Link to="/dashboard/discover" className="btn btn-secondary">
+              Explore products
+            </Link>
+          </div>
         </div>
       </section>
 
@@ -179,24 +208,36 @@ function Home() {
         <div className="section-head">
           <div>
             <div className="section-kicker">Vision</div>
-            <h2 className="section-title">A creator-first Solana marketplace</h2>
+            <h2 className="section-title">
+              A creator-first Solana marketplace
+            </h2>
             <p className="section-sub">
-              Ripple removes platform lock-in so creators can sell anything, anywhere, and get paid instantly with crypto.
+              Ripple removes platform lock-in so creators can sell anything,
+              anywhere, and get paid instantly with crypto.
             </p>
           </div>
         </div>
         <div className="grid grid-3">
           <div className="card">
             <div className="card-title">The problem</div>
-            <p className="card-meta">Legacy platforms charge high fees, require Stripe/PayPal, and can ban creators.</p>
+            <p className="card-meta">
+              Legacy platforms charge high fees, require Stripe/PayPal, and can
+              ban creators.
+            </p>
           </div>
           <div className="card">
             <div className="card-title">The solution</div>
-            <p className="card-meta">Sell digital content, set a SOL price, and unlock access immediately with on-chain verification.</p>
+            <p className="card-meta">
+              Sell digital content, set a SOL price, and unlock access
+              immediately with on-chain verification.
+            </p>
           </div>
           <div className="card">
             <div className="card-title">The impact</div>
-            <p className="card-meta">Creators keep control, earn globally, and gate access using wallets instead of emails.</p>
+            <p className="card-meta">
+              Creators keep control, earn globally, and gate access using
+              wallets instead of emails.
+            </p>
           </div>
         </div>
       </section>
@@ -211,15 +252,22 @@ function Home() {
         <div className="grid grid-3">
           <div className="card">
             <div className="card-title">Primary</div>
-            <p className="card-meta">Indie creators, students, devs, designers, freelancers, and AI/tech educators.</p>
+            <p className="card-meta">
+              Indie creators, students, devs, designers, freelancers, and
+              AI/tech educators.
+            </p>
           </div>
           <div className="card">
             <div className="card-title">Secondary</div>
-            <p className="card-meta">Buyers looking for templates, courses, notes, and creator tools.</p>
+            <p className="card-meta">
+              Buyers looking for templates, courses, notes, and creator tools.
+            </p>
           </div>
           <div className="card">
             <div className="card-title">Global</div>
-            <p className="card-meta">Anyone blocked by legacy payment rails can earn with Solana.</p>
+            <p className="card-meta">
+              Anyone blocked by legacy payment rails can earn with Solana.
+            </p>
           </div>
         </div>
       </section>
@@ -228,8 +276,12 @@ function Home() {
         <div className="section-head">
           <div>
             <div className="section-kicker">Core features</div>
-            <h2 className="section-title">Everything you need to sell on-chain</h2>
-            <p className="section-sub">SOL payments now, USDC support coming next.</p>
+            <h2 className="section-title">
+              Everything you need to sell on-chain
+            </h2>
+            <p className="section-sub">
+              SOL payments now, USDC support coming next.
+            </p>
           </div>
         </div>
         <div className="grid grid-3">
@@ -243,7 +295,9 @@ function Home() {
           ].map((item) => (
             <div className="card" key={item}>
               <div className="card-title">{item}</div>
-              <p className="card-meta">Powered by Solana for fast settlement.</p>
+              <p className="card-meta">
+                Powered by Solana for fast settlement.
+              </p>
             </div>
           ))}
         </div>
@@ -292,50 +346,6 @@ function Home() {
         </div>
       </section>
 
-      <section className="section" id="marketplace">
-        <div className="section-head">
-          <div>
-            <div className="section-kicker">Marketplace</div>
-            <h2 className="section-title">Discover products on Ripple</h2>
-            <p className="section-sub">Real listings from creators using the Ripple workflow.</p>
-          </div>
-        </div>
-        {error && <div className="error">{error}</div>}
-        {loading ? (
-          <div className="marketplace-grid">
-            {[1, 2, 3, 4, 5, 6].map((k) => (
-              <div className="card product-card skeleton-card" key={k} aria-hidden>
-                <div className="skeleton-line skeleton-line--tag" />
-                <div className="skeleton-line skeleton-line--title" />
-                <div className="skeleton-line" />
-                <div className="skeleton-line skeleton-line--short" />
-              </div>
-            ))}
-          </div>
-        ) : filtered.length === 0 ? (
-          <div className="empty">No products yet. Be the first to publish.</div>
-        ) : (
-          <div className="marketplace-grid">
-            {filtered.map((product) => (
-              <Link to={productPublicPath(product)} key={product._id} className="card product-card">
-                {product.thumbnailUrl ? (
-                  <img src={product.thumbnailUrl} alt="" className="product-card__thumb" />
-                ) : null}
-                <div className="tag">Creator</div>
-                <div className="card-title">{product.title}</div>
-                <p className="card-meta">
-                  {product.summary ? (
-                    product.summary
-                  ) : (
-                    <FormatProductDescription text={product.description} />
-                  )}
-                </p>
-                <div className="product-price">{formatProductPrice(product)}</div>
-              </Link>
-            ))}
-          </div>
-        )}
-      </section>
     </Layout>
   );
 }
@@ -350,14 +360,16 @@ function ProductsPage() {
     api
       .get("/products")
       .then((res) => setProducts(res.data))
-      .catch(() => setError("Unable to load marketplace products."))
+      .catch(() => setError("Unable to load products."))
       .finally(() => setLoading(false));
   }, []);
 
   const filtered = useMemo(() => {
     const lower = query.trim().toLowerCase();
     if (!lower) return products;
-    return products.filter((p) => `${p.title} ${p.description}`.toLowerCase().includes(lower));
+    return products.filter((p) =>
+      `${p.title} ${p.description}`.toLowerCase().includes(lower),
+    );
   }, [products, query]);
 
   return (
@@ -382,7 +394,11 @@ function ProductsPage() {
         {loading ? (
           <div className="marketplace-grid">
             {[1, 2, 3, 4, 5, 6].map((k) => (
-              <div className="card product-card skeleton-card" key={k} aria-hidden>
+              <div
+                className="card product-card skeleton-card"
+                key={k}
+                aria-hidden
+              >
                 <div className="skeleton-line skeleton-line--tag" />
                 <div className="skeleton-line skeleton-line--title" />
                 <div className="skeleton-line" />
@@ -395,9 +411,17 @@ function ProductsPage() {
         ) : (
           <div className="marketplace-grid">
             {filtered.map((product) => (
-              <Link to={productPublicPath(product)} key={product._id} className="card product-card">
+              <Link
+                to={productPublicPath(product)}
+                key={product._id}
+                className="card product-card"
+              >
                 {product.thumbnailUrl ? (
-                  <img src={product.thumbnailUrl} alt="" className="product-card__thumb" />
+                  <img
+                    src={product.thumbnailUrl}
+                    alt=""
+                    className="product-card__thumb"
+                  />
                 ) : null}
                 <div className="tag">Creator</div>
                 <div className="card-title">{product.title}</div>
@@ -408,7 +432,9 @@ function ProductsPage() {
                     <FormatProductDescription text={product.description} />
                   )}
                 </p>
-                <div className="product-price">{formatProductPrice(product)}</div>
+                <div className="product-price">
+                  {formatProductPrice(product)}
+                </div>
               </Link>
             ))}
           </div>
@@ -416,6 +442,10 @@ function ProductsPage() {
       </section>
     </Layout>
   );
+}
+
+function DiscoverPage() {
+  return <Navigate to="/dashboard/discover" replace />;
 }
 
 function ProductPage() {
@@ -461,38 +491,43 @@ function ProductPage() {
     }
 
     if (product.currency === "USDC") {
-      setError("This listing is priced in USDC. On-chain checkout for USDC is not enabled yet — ask the creator for a SOL-priced version.");
+      setError(
+        "This listing is priced in USDC. On-chain checkout for USDC is not enabled yet � ask the creator for a SOL-priced version.",
+      );
       return;
     }
 
     setBusy(true);
     try {
       const buyerWallet = publicKey.toBase58();
-      setStatus("Preparing transaction...");
-      const toPubkey = new PublicKey(product.creatorWallet);
-      const tx = new Transaction().add(
-        SystemProgram.transfer({
-          fromPubkey: publicKey,
-          toPubkey,
-          lamports: Math.round(product.priceSol * LAMPORTS_PER_SOL),
-        }),
-      );
-      const latest = await connection.getLatestBlockhash();
-      tx.recentBlockhash = latest.blockhash;
-      tx.feePayer = publicKey;
-      setStatus("Awaiting wallet approval...");
-      const signature = await sendTransaction(tx, connection, { skipPreflight: false });
-      await connection.confirmTransaction({ signature, ...latest }, "confirmed");
+      const payoutWallet = product.payoutWallet || product.creatorWallet;
+      setStatus("Preparing transactions...");
+      const { creatorSignature } = await handlePayment({
+        connection,
+        wallet: { publicKey, sendTransaction },
+        productPriceSol: product.priceSol,
+        creatorAddress: payoutWallet,
+        platformAddress: RIPPLE_FEE_WALLET,
+      });
 
       setStatus("Verifying on-chain payment...");
-      await api.post("/purchases/verify", { productId: product._id, buyerWallet, txSignature: signature });
+      await api.post("/purchases/verify", {
+        productId: product._id,
+        buyerWallet,
+        txSignature: creatorSignature,
+      });
 
       setStatus("Unlocking content...");
-      const access = await api.post("/access/unlock", { productId: product._id, buyerWallet });
+      const access = await api.post("/access/unlock", {
+        productId: product._id,
+        buyerWallet,
+      });
       setContentLink(access.data.contentUrl);
       setStatus("Unlocked! Enjoy your content.");
     } catch {
-      setError("Payment failed. Ensure you are on the same network as the app (devnet by default) and try again.");
+      setError(
+        "Payment failed. Ensure you are on the same network as the app (devnet by default) and try again.",
+      );
     } finally {
       setBusy(false);
     }
@@ -521,48 +556,87 @@ function ProductPage() {
   return (
     <Layout>
       <section className="page-section">
-        <div className="card product-public-card">
+                <div className="card product-public-card">
           {product.coverUrl ? (
             <div className="product-public-cover">
               <img src={product.coverUrl} alt="" />
             </div>
           ) : null}
-          {product.thumbnailUrl ? <img src={product.thumbnailUrl} alt="" className="product-public-thumb" /> : null}
-          <div className="tag">Creator product</div>
-          <h2 className="section-title product-public-title">{product.title}</h2>
-          {product.summary ? <p className="product-summary">{product.summary}</p> : null}
-          <p className="section-sub product-public-desc">
-            <FormatProductDescription text={product.description} />
-          </p>
-          {product.productInfo ? (
-            <div className="product-info-block">
-              <div className="tag">What you get</div>
-              <p className="section-sub">{product.productInfo}</p>
+          <div className="product-public-body">
+            <div className="product-public-main">
+              {product.thumbnailUrl ? (
+                <img
+                  src={product.thumbnailUrl}
+                  alt=""
+                  className="product-public-thumb"
+                />
+              ) : null}
+              <div className="tag">Creator product</div>
+              <h2 className="section-title product-public-title">
+                {product.title}
+              </h2>
+              {product.summary ? (
+                <p className="product-summary">{product.summary}</p>
+              ) : null}
+              <p className="section-sub product-public-desc">
+                <FormatProductDescription text={product.description} />
+              </p>
+              {product.productInfo ? (
+                <div className="product-info-block">
+                  <div className="tag">What you get</div>
+                  <p className="section-sub">{product.productInfo}</p>
+                </div>
+              ) : null}
             </div>
-          ) : null}
-          <div className="product-public-actions">
-            <div className="product-public-price">{formatProductPrice(product)}</div>
-            <button
-              className="btn btn-primary"
-              disabled={busy || product.currency === "USDC"}
-              onClick={buy}
-            >
-              {busy ? "Processing..." : product.currency === "USDC" ? "USDC soon" : "Buy now"}
-            </button>
-            <button className="btn btn-outline" onClick={() => navigate(-1)}>Back</button>
+            <aside className="product-public-aside">
+              <div className="product-public-actions">
+                <div className="product-public-price">
+                  {formatProductPrice(product)}
+                </div>
+                <button
+                  className="btn btn-primary"
+                  disabled={busy || product.currency === "USDC"}
+                  onClick={buy}
+                >
+                  {busy
+                    ? "Processing..."
+                    : product.currency === "USDC"
+                      ? "USDC soon"
+                      : "Buy now"}
+                </button>
+                <button className="btn btn-outline" onClick={() => navigate(-1)}>
+                  Back
+                </button>
+                <p className="card-meta product-public-creator">
+                  Creator: {shorten(product.creatorWallet)}
+                </p>
+              </div>
+              {status && (
+                <div className="notice" style={{ marginTop: "12px" }}>
+                  {status}
+                </div>
+              )}
+              {error && (
+                <div className="error" style={{ marginTop: "12px" }}>
+                  {error}
+                </div>
+              )}
+              {contentLink && (
+                <div className="product-public-unlock" style={{ marginTop: "16px" }}>
+                  <div className="tag">Access unlocked</div>
+                  <p className="card-meta">Your content link is ready.</p>
+                  <a
+                    className="btn btn-secondary"
+                    href={contentLink}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    Open content
+                  </a>
+                </div>
+              )}
+            </aside>
           </div>
-          <p className="card-meta product-public-creator">Creator: {shorten(product.creatorWallet)}</p>
-          {status && <div className="notice" style={{ marginTop: "12px" }}>{status}</div>}
-          {error && <div className="error" style={{ marginTop: "12px" }}>{error}</div>}
-          {contentLink && (
-            <div style={{ marginTop: "16px" }}>
-              <div className="tag">Access unlocked</div>
-              <p className="card-meta">Your content link is ready.</p>
-              <a className="btn btn-secondary" href={contentLink} target="_blank" rel="noreferrer">
-                Open content
-              </a>
-            </div>
-          )}
         </div>
       </section>
     </Layout>
@@ -573,15 +647,24 @@ export function App() {
   return (
     <Routes>
       <Route path="/" element={<Home />} />
+      <Route path="/discover" element={<DiscoverPage />} />
       <Route path="/products" element={<ProductsPage />} />
       <Route path="/dashboard" element={<DashboardShell />}>
         <Route index element={<Navigate to="home" replace />} />
         <Route path="home" element={<DashboardHomePage />} />
         <Route path="products" element={<DashboardProductsPage />} />
         <Route path="products/new" element={<DashboardNewProductPage />} />
+        <Route path="payment" element={<DashboardPaymentPage />} />
+        <Route path="discover" element={<DashboardDiscoverPage />} />
       </Route>
       <Route path="/p/:id" element={<ProductPage />} />
       <Route path="/:slug" element={<ProductPage />} />
     </Routes>
   );
 }
+
+
+
+
+
+

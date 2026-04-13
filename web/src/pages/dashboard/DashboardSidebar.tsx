@@ -9,7 +9,7 @@ export function DashboardSidebar() {
       <nav className="gum-nav">
         <NavLink to="/dashboard/home" className={linkClass} end>
           <span className="gum-nav__ico" aria-hidden>
-            ⌂
+            H
           </span>
           Home
         </NavLink>
@@ -32,15 +32,21 @@ export function DashboardSidebar() {
           </span>
           Products
         </NavLink>
+        <NavLink to="/dashboard/payment" className={linkClass}>
+          <span className="gum-nav__ico" aria-hidden>
+            $
+          </span>
+          Payments
+        </NavLink>
       </nav>
       <div className="gum-sidebar__divider" />
       <nav className="gum-nav gum-nav--secondary">
-        <a href="/#marketplace" className="gum-nav__link">
+        <NavLink to="/dashboard/discover" className={linkClass}>
           <span className="gum-nav__ico" aria-hidden>
-            ◎
+            *
           </span>
           Discover
-        </a>
+        </NavLink>
       </nav>
     </aside>
   );

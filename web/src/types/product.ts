@@ -14,6 +14,7 @@ export type ProductShape = {
   coverUrl?: string;
   thumbnailUrl?: string;
   creatorWallet: string;
+  payoutWallet?: string;
   salesCount: number;
   createdAt?: string;
 };

@@ -34,6 +34,7 @@ export function DashboardNewProductPage() {
   const [error, setError] = useState("");
   const [createdProduct, setCreatedProduct] = useState<ProductShape | null>(null);
   const [copied, setCopied] = useState(false);
+  const [payoutWallet, setPayoutWallet] = useState("");
   const [toolbarState, setToolbarState] = useState({ bold: false, italic: false, underline: false });
   const [draft, setDraft] = useState({
     name: "",
@@ -56,6 +57,12 @@ export function DashboardNewProductPage() {
     };
     document.addEventListener("click", close);
     return () => document.removeEventListener("click", close);
+  }, []);
+
+  useEffect(() => {
+    if (typeof localStorage === "undefined") return;
+    const saved = localStorage.getItem("ripple_payout_wallet");
+    if (saved) setPayoutWallet(saved);
   }, []);
 
   const canStep1 = draft.name.trim().length >= 2 && draft.productType && Number(draft.priceAmount) > 0;
@@ -101,6 +108,7 @@ export function DashboardNewProductPage() {
         priceUsdc: draft.currency === "USDC" ? price : 0,
         productType: draft.productType,
         creatorWallet: wallet,
+        payoutWallet: payoutWallet || undefined,
         status: "draft",
       });
       const published = await api.post<ProductShape>(`/products/${data._id}/publish`);

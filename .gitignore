@@ -1,3 +1,10 @@
 # Rust / Anchor
 target/
 .anchor/
+
+# Node
+node_modules/
+dist/
+.env
+.env.local
+*.log
