@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import {
   Link,
   Navigate,
@@ -13,7 +13,7 @@ import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { api } from "./lib/api";
 import { handlePayment, RIPPLE_FEE_WALLET } from "./lib/payment";
-import { formatProductPrice, productPublicPath } from "./lib/productUtils";
+import { formatProductPrice } from "./lib/productUtils";
 import { FormatProductDescription } from "./lib/richDescription";
 import type { ProductShape } from "./types/product";
 import { DashboardShell } from "./layouts/DashboardShell";
@@ -112,7 +112,7 @@ function Layout({
               <Link to="/dashboard/discover">Discover</Link>
               <a href="/#features">Features</a>
               <a href="/#creators">Creators</a>
-              <Link to="/products">Products</Link>
+              <Link to="/dashboard/products">Products</Link>
               <Link to="/dashboard/discover" className="nav-link--outlined">
                 Marketplace
               </Link>
@@ -121,7 +121,7 @@ function Layout({
             <>
               <Link to="/">Home</Link>
               <Link to="/dashboard/discover">Discover</Link>
-              <Link to="/products">Products</Link>
+              <Link to="/dashboard/products">Products</Link>
               <Link to="/dashboard/home">Dashboard</Link>
             </>
           )}
@@ -152,17 +152,7 @@ function Layout({
               ? "footer footer--discover"
               : "footer"
         }
-      >
-        Built for creators on Solana. Learn more on{" "}
-        <a
-          href="https://github.com/sachinacharyaa/Ripple"
-          target="_blank"
-          rel="noreferrer"
-        >
-          GitHub
-        </a>
-        .
-      </footer>
+      />
     </div>
   );
 }
@@ -350,100 +340,6 @@ function Home() {
   );
 }
 
-function ProductsPage() {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [query, setQuery] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-
-  useEffect(() => {
-    api
-      .get("/products")
-      .then((res) => setProducts(res.data))
-      .catch(() => setError("Unable to load products."))
-      .finally(() => setLoading(false));
-  }, []);
-
-  const filtered = useMemo(() => {
-    const lower = query.trim().toLowerCase();
-    if (!lower) return products;
-    return products.filter((p) =>
-      `${p.title} ${p.description}`.toLowerCase().includes(lower),
-    );
-  }, [products, query]);
-
-  return (
-    <Layout>
-      <section className="section" id="products">
-        <div className="section-head">
-          <div>
-            <div className="section-kicker">Live</div>
-            <h2 className="section-title">Products on Ripple</h2>
-            <p className="section-sub">Only published products show up here.</p>
-          </div>
-          <div className="search-bar" aria-label="Search products">
-            <input
-              type="text"
-              placeholder="Search products..."
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-            />
-          </div>
-        </div>
-        {error && <div className="error">{error}</div>}
-        {loading ? (
-          <div className="marketplace-grid">
-            {[1, 2, 3, 4, 5, 6].map((k) => (
-              <div
-                className="card product-card skeleton-card"
-                key={k}
-                aria-hidden
-              >
-                <div className="skeleton-line skeleton-line--tag" />
-                <div className="skeleton-line skeleton-line--title" />
-                <div className="skeleton-line" />
-                <div className="skeleton-line skeleton-line--short" />
-              </div>
-            ))}
-          </div>
-        ) : filtered.length === 0 ? (
-          <div className="empty">No published products yet.</div>
-        ) : (
-          <div className="marketplace-grid">
-            {filtered.map((product) => (
-              <Link
-                to={productPublicPath(product)}
-                key={product._id}
-                className="card product-card"
-              >
-                {product.thumbnailUrl ? (
-                  <img
-                    src={product.thumbnailUrl}
-                    alt=""
-                    className="product-card__thumb"
-                  />
-                ) : null}
-                <div className="tag">Creator</div>
-                <div className="card-title">{product.title}</div>
-                <p className="card-meta">
-                  {product.summary ? (
-                    product.summary
-                  ) : (
-                    <FormatProductDescription text={product.description} />
-                  )}
-                </p>
-                <div className="product-price">
-                  {formatProductPrice(product)}
-                </div>
-              </Link>
-            ))}
-          </div>
-        )}
-      </section>
-    </Layout>
-  );
-}
-
 function DiscoverPage() {
   return <Navigate to="/dashboard/discover" replace />;
 }
@@ -556,43 +452,21 @@ function ProductPage() {
   return (
     <Layout>
       <section className="page-section">
-                <div className="card product-public-card">
-          {product.coverUrl ? (
-            <div className="product-public-cover">
+        <div className="product-public-card">
+          <div className="product-public-media">
+            {product.coverUrl ? (
               <img src={product.coverUrl} alt="" />
-            </div>
-          ) : null}
-          <div className="product-public-body">
-            <div className="product-public-main">
-              {product.thumbnailUrl ? (
-                <img
-                  src={product.thumbnailUrl}
-                  alt=""
-                  className="product-public-thumb"
-                />
-              ) : null}
-              <div className="tag">Creator product</div>
-              <h2 className="section-title product-public-title">
-                {product.title}
-              </h2>
-              {product.summary ? (
-                <p className="product-summary">{product.summary}</p>
-              ) : null}
-              <p className="section-sub product-public-desc">
-                <FormatProductDescription text={product.description} />
-              </p>
-              {product.productInfo ? (
-                <div className="product-info-block">
-                  <div className="tag">What you get</div>
-                  <p className="section-sub">{product.productInfo}</p>
-                </div>
-              ) : null}
-            </div>
-            <aside className="product-public-aside">
+            ) : (
+              <div className="product-public-media__ph">No cover</div>
+            )}
+          </div>
+          <div className="product-public-panel">
+            <div className="product-public-header">
+              <h2 className="product-public-title">{product.title}</h2>
+              <div className="product-public-price">
+                {formatProductPrice(product)}
+              </div>
               <div className="product-public-actions">
-                <div className="product-public-price">
-                  {formatProductPrice(product)}
-                </div>
                 <button
                   className="btn btn-primary"
                   disabled={busy || product.currency === "USDC"}
@@ -604,38 +478,45 @@ function ProductPage() {
                       ? "USDC soon"
                       : "Buy now"}
                 </button>
-                <button className="btn btn-outline" onClick={() => navigate(-1)}>
-                  Back
+                <button className="btn btn-outline" type="button">
+                  Add to cart
                 </button>
-                <p className="card-meta product-public-creator">
-                  Creator: {shorten(product.creatorWallet)}
-                </p>
               </div>
-              {status && (
-                <div className="notice" style={{ marginTop: "12px" }}>
-                  {status}
+            </div>
+            <div className="product-public-copy">
+              {product.summary ? (
+                <p className="product-summary">{product.summary}</p>
+              ) : null}
+              <p className="product-public-desc">
+                <FormatProductDescription text={product.description} />
+              </p>
+              {product.productInfo ? (
+                <div className="product-info-block">
+                  <div className="tag">What you get</div>
+                  <p className="section-sub">{product.productInfo}</p>
                 </div>
-              )}
-              {error && (
-                <div className="error" style={{ marginTop: "12px" }}>
-                  {error}
-                </div>
-              )}
-              {contentLink && (
-                <div className="product-public-unlock" style={{ marginTop: "16px" }}>
-                  <div className="tag">Access unlocked</div>
-                  <p className="card-meta">Your content link is ready.</p>
-                  <a
-                    className="btn btn-secondary"
-                    href={contentLink}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    Open content
-                  </a>
-                </div>
-              )}
-            </aside>
+              ) : null}
+            </div>
+            {status && (
+              <div className="notice product-public-feedback">{status}</div>
+            )}
+            {error && (
+              <div className="error product-public-feedback">{error}</div>
+            )}
+            {contentLink && (
+              <div className="product-public-unlock">
+                <div className="tag">Access unlocked</div>
+                <p className="card-meta">Your content link is ready.</p>
+                <a
+                  className="btn btn-secondary"
+                  href={contentLink}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Open content
+                </a>
+              </div>
+            )}
           </div>
         </div>
       </section>
@@ -648,7 +529,7 @@ export function App() {
     <Routes>
       <Route path="/" element={<Home />} />
       <Route path="/discover" element={<DiscoverPage />} />
-      <Route path="/products" element={<ProductsPage />} />
+      <Route path="/products" element={<Navigate to="/dashboard/products" replace />} />
       <Route path="/dashboard" element={<DashboardShell />}>
         <Route index element={<Navigate to="home" replace />} />
         <Route path="home" element={<DashboardHomePage />} />

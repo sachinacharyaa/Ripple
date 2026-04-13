@@ -42,10 +42,8 @@ export function DashboardNewProductPage() {
     currency: "SOL" as "SOL" | "USDC",
     priceAmount: "",
     description: "",
-    summary: "",
     productInfo: "",
     coverUrl: "",
-    thumbnailUrl: "",
     contentUrl: "",
   });
 
@@ -97,12 +95,10 @@ export function DashboardNewProductPage() {
     try {
       const { data } = await api.post<ProductShape>("/products", {
         title: draft.name.trim(),
-        description: draft.description.trim(),
-        summary: draft.summary.trim() || undefined,
-        productInfo: draft.productInfo.trim() || undefined,
+        description: draft.description.trim(),        productInfo: draft.productInfo.trim() || undefined,
         contentUrl: draft.contentUrl.trim(),
         coverUrl: draft.coverUrl || undefined,
-        thumbnailUrl: draft.thumbnailUrl || undefined,
+        thumbnailUrl: draft.coverUrl || undefined,
         currency: draft.currency,
         priceSol: draft.currency === "SOL" ? price : 0,
         priceUsdc: draft.currency === "USDC" ? price : 0,
@@ -465,20 +461,10 @@ export function DashboardNewProductPage() {
                 />
               </div>
               <div className="gum-field">
-                <label className="gum-label">Summary</label>
-                <textarea
-                  className="gum-textarea"
-                  placeholder="Short line for cards and search"
-                  value={draft.summary}
-                  onChange={(e) => setDraft((d) => ({ ...d, summary: e.target.value }))}
-                  maxLength={2000}
-                />
-              </div>
-              <div className="gum-field">
                 <label className="gum-label">Cover</label>
                 <div className="dash-dropzone gum-dropzone">
                   {draft.coverUrl ? (
-                    <img src={draft.coverUrl} alt="" className="dash-preview-img dash-preview-img--wide" />
+                    <img src={draft.coverUrl} alt="" className="dash-preview-img dash-preview-img--full" />
                   ) : (
                     <span className="dash-dropzone__plus" aria-hidden>
                       +
@@ -492,37 +478,10 @@ export function DashboardNewProductPage() {
                     onChange={async (e) => {
                       const f = e.target.files?.[0];
                       if (!f) return;
+                      setError("");
                       try {
                         const dataUrl = await readFileAsDataUrl(f);
                         setDraft((d) => ({ ...d, coverUrl: dataUrl }));
-                      } catch (err) {
-                        setError(err instanceof Error ? err.message : "Upload failed");
-                      }
-                    }}
-                  />
-                </div>
-              </div>
-              <div className="gum-field">
-                <label className="gum-label">Thumbnail</label>
-                <div className="dash-dropzone dash-dropzone--square gum-dropzone">
-                  {draft.thumbnailUrl ? (
-                    <img src={draft.thumbnailUrl} alt="" className="dash-preview-img" />
-                  ) : (
-                    <span className="dash-dropzone__plus" aria-hidden>
-                      +
-                    </span>
-                  )}
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="dash-file-input"
-                    aria-label="Upload thumbnail image"
-                    onChange={async (e) => {
-                      const f = e.target.files?.[0];
-                      if (!f) return;
-                      try {
-                        const dataUrl = await readFileAsDataUrl(f);
-                        setDraft((d) => ({ ...d, thumbnailUrl: dataUrl }));
                       } catch (err) {
                         setError(err instanceof Error ? err.message : "Upload failed");
                       }
@@ -560,22 +519,11 @@ export function DashboardNewProductPage() {
               <div className="dash-preview-card__cover">
                 {draft.coverUrl ? <img src={draft.coverUrl} alt="" /> : <span className="dash-preview-card__cover-ph">+</span>}
               </div>
-              <div className="dash-preview-card__thumb-below">
-                {draft.thumbnailUrl ? (
-                  <img src={draft.thumbnailUrl} alt="" />
-                ) : (
-                  <span className="dash-preview-card__thumb-ph" aria-hidden>
-                    +
-                  </span>
-                )}
-              </div>
               <div className="dash-preview-card__body">
                 <div className="dash-preview-card__title">{draft.name || "Product"}</div>
                 <div className="dash-preview-card__price">{formatProductPrice(previewProduct)}</div>
                 <p className="dash-preview-card__summary">
-                  {draft.summary ? (
-                    draft.summary
-                  ) : draft.description ? (
+                  {draft.description ? (
                     <FormatProductDescription text={draft.description} />
                   ) : (
                     "Description preview"

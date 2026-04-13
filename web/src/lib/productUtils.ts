@@ -5,7 +5,7 @@ export const CRYPTO_OPTIONS = [
   { code: "USDC" as const, label: "USDC", symbol: "$" },
 ];
 
-export const MAX_IMAGE_BYTES = 2 * 1024 * 1024;
+export const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
 
 export function formatProductPrice(p: Pick<ProductShape, "currency" | "priceSol" | "priceUsdc">) {
   const c = p.currency ?? "SOL";
