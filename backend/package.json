@@ -1,6 +1,7 @@
 {
   "name": "ripple-backend",
   "version": "1.0.0",
+  "type": "module",
   "main": "src/server.js",
   "scripts": {
     "dev": "node src/server.js",

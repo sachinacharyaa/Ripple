@@ -1,11 +1,10 @@
-import { useEffect, useState, type ReactNode } from "react";
+ï»¿import { useEffect, useState, type ReactNode } from "react";
 import {
   Link,
   Navigate,
   Route,
   Routes,
   useLocation,
-  useNavigate,
   useParams,
 } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -24,11 +23,6 @@ import { DashboardDiscoverPage } from "./pages/dashboard/DashboardDiscoverPage";
 import { DashboardPaymentPage } from "./pages/dashboard/DashboardPaymentPage";
 
 type Product = ProductShape;
-
-function shorten(address: string) {
-  if (!address) return "";
-  return `${address.slice(0, 4)}...${address.slice(-4)}`;
-}
 
 function Coins() {
   useEffect(() => {
@@ -346,7 +340,6 @@ function DiscoverPage() {
 
 function ProductPage() {
   const { id, slug } = useParams();
-  const navigate = useNavigate();
   const { connection } = useConnection();
   const { publicKey, sendTransaction } = useWallet();
   const wallet = publicKey?.toBase58() ?? "";
@@ -388,7 +381,7 @@ function ProductPage() {
 
     if (product.currency === "USDC") {
       setError(
-        "This listing is priced in USDC. On-chain checkout for USDC is not enabled yet — ask the creator for a SOL-priced version.",
+        "This listing is priced in USDC. On-chain checkout for USDC is not enabled yet ï¿½ ask the creator for a SOL-priced version.",
       );
       return;
     }
