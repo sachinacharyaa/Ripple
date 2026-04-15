@@ -24,10 +24,7 @@ export async function handlePayment({
   productPriceSol,
   creatorAddress,
   platformAddress = RIPPLE_FEE_WALLET,
-}: PaymentParams): Promise<{
-  creatorSignature: string;
-  feeSignature: string;
-}> {
+}: PaymentParams): Promise<string> {
   if (!wallet.publicKey) {
     throw new Error("Connect wallet first");
   }
@@ -35,18 +32,17 @@ export async function handlePayment({
   const creatorPubKey = new PublicKey(creatorAddress);
   const platformPubKey = new PublicKey(platformAddress);
 
-  const priceLamports = Math.round(productPriceSol * LAMPORTS_PER_SOL);
-  const feeLamports = Math.round(priceLamports * 0.01);
+  const totalLamports = Math.round(productPriceSol * LAMPORTS_PER_SOL);
+  const feeLamports = Math.floor(totalLamports * 0.01);
+  const creatorLamports = totalLamports - feeLamports;
 
-  const tx1 = new Transaction().add(
+  // Build a single transaction with split payment transfers.
+  const tx = new Transaction().add(
     SystemProgram.transfer({
       fromPubkey: wallet.publicKey,
       toPubkey: creatorPubKey,
-      lamports: priceLamports,
+      lamports: creatorLamports,
     }),
-  );
-
-  const tx2 = new Transaction().add(
     SystemProgram.transfer({
       fromPubkey: wallet.publicKey,
       toPubkey: platformPubKey,
@@ -54,15 +50,14 @@ export async function handlePayment({
     }),
   );
 
-  const signature1 = await wallet.sendTransaction(tx1, connection, {
+  const latest = await connection.getLatestBlockhash();
+  tx.recentBlockhash = latest.blockhash;
+  tx.feePayer = wallet.publicKey;
+
+  const signature = await wallet.sendTransaction(tx, connection, {
     skipPreflight: false,
   });
-  await connection.confirmTransaction(signature1, "processed");
+  await connection.confirmTransaction({ signature, ...latest }, "confirmed");
 
-  const signature2 = await wallet.sendTransaction(tx2, connection, {
-    skipPreflight: false,
-  });
-  await connection.confirmTransaction(signature2, "processed");
-
-  return { creatorSignature: signature1, feeSignature: signature2 };
+  return signature;
 }

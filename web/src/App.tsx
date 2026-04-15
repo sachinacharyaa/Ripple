@@ -1,4 +1,4 @@
-﻿import { useEffect, useState, type ReactNode } from "react";
+﻿import { useEffect, useMemo, useState, type ReactNode } from "react";
 import {
   Link,
   Navigate,
@@ -12,15 +12,15 @@ import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { api } from "./lib/api";
 import { handlePayment, RIPPLE_FEE_WALLET } from "./lib/payment";
-import { formatProductPrice } from "./lib/productUtils";
+import { formatProductPrice, productPublicPath } from "./lib/productUtils";
 import { FormatProductDescription } from "./lib/richDescription";
 import type { ProductShape } from "./types/product";
 import { DashboardShell } from "./layouts/DashboardShell";
 import { DashboardHomePage } from "./pages/dashboard/DashboardHomePage";
 import { DashboardProductsPage } from "./pages/dashboard/DashboardProductsPage";
 import { DashboardNewProductPage } from "./pages/dashboard/DashboardNewProductPage";
-import { DashboardDiscoverPage } from "./pages/dashboard/DashboardDiscoverPage";
 import { DashboardPaymentPage } from "./pages/dashboard/DashboardPaymentPage";
+import { DashboardDiscoverPage } from "./pages/dashboard/DashboardDiscoverPage";
 
 type Product = ProductShape;
 
@@ -78,21 +78,24 @@ function Layout({
   variant = "default",
 }: {
   children: ReactNode;
-  variant?: "default" | "dashboard" | "discover";
+  variant?: "default" | "dashboard";
 }) {
   const location = useLocation();
   const isHome = location.pathname === "/";
+  const [copied, setCopied] = useState(false);
+
+  const copyCurrentLink = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1400);
+    } catch {
+      setCopied(false);
+    }
+  };
 
   return (
-    <div
-      className={
-        variant === "dashboard"
-          ? "page page--dashboard"
-          : variant === "discover"
-            ? "page page--discover"
-            : "page"
-      }
-    >
+    <div className={variant === "dashboard" ? "page page--dashboard" : "page"}>
       <header className="site-header" id="top">
         <div className="header-left">
           <Link to="/" className="logo">
@@ -103,19 +106,18 @@ function Layout({
         <nav className="nav-links">
           {isHome ? (
             <>
-              <Link to="/dashboard/discover">Discover</Link>
+              <a href="/#discover">Discover</a>
               <a href="/#features">Features</a>
               <a href="/#creators">Creators</a>
-              <Link to="/dashboard/products">Products</Link>
-              <Link to="/dashboard/discover" className="nav-link--outlined">
+              <Link to="/products">Products</Link>
+              <a href="/#marketplace" className="nav-link--outlined">
                 Marketplace
-              </Link>
+              </a>
             </>
           ) : (
             <>
               <Link to="/">Home</Link>
-              <Link to="/dashboard/discover">Discover</Link>
-              <Link to="/dashboard/products">Products</Link>
+              <Link to="/products">Products</Link>
               <Link to="/dashboard/home">Dashboard</Link>
             </>
           )}
@@ -129,32 +131,63 @@ function Layout({
       </header>
       <main
         className={
-          variant === "dashboard"
-            ? "main main--dashboard-pro"
-            : variant === "discover"
-              ? "main main--discover"
-              : "main"
+          variant === "dashboard" ? "main main--dashboard-pro" : "main"
         }
       >
         {children}
       </main>
       <footer
         className={
-          variant === "dashboard"
-            ? "footer footer--dashboard-pro"
-            : variant === "discover"
-              ? "footer footer--discover"
-              : "footer"
+          variant === "dashboard" ? "footer footer--dashboard-pro" : "footer"
         }
-      />
+      >
+        <span className="footer-powered">
+          Powered by <span className="footer-powered__badge">Ripple</span>
+        </span>
+        <button
+          className="footer-share-btn"
+          type="button"
+          aria-label="Copy page link"
+          onClick={copyCurrentLink}
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path
+              d="M15 8a3 3 0 1 0-2.83-4h-.34A3 3 0 0 0 9 8l-3.8 2.17a3 3 0 1 0 0 3.66L9 16a3 3 0 1 0 2.83 4h.34A3 3 0 0 0 15 16l3.8-2.17a3 3 0 1 0 0-3.66L15 8Z"
+              fill="currentColor"
+            />
+          </svg>
+          <span>{copied ? "Copied" : "Share"}</span>
+        </button>
+      </footer>
     </div>
   );
 }
 
 function Home() {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [query, setQuery] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    api
+      .get("/products")
+      .then((res) => setProducts(res.data))
+      .catch(() => setError("Unable to load marketplace products."))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const filtered = useMemo(() => {
+    const lower = query.trim().toLowerCase();
+    if (!lower) return products;
+    return products.filter((p) =>
+      `${p.title} ${p.description}`.toLowerCase().includes(lower),
+    );
+  }, [products, query]);
+
   return (
     <Layout>
-      <section className="hero" id="hero">
+      <section className="hero" id="discover">
         <div className="hero-coins" aria-hidden="true">
           <Coins />
         </div>
@@ -181,9 +214,17 @@ function Home() {
             <Link to="/dashboard/home" className="btn btn-primary">
               Start selling
             </Link>
-            <Link to="/dashboard/discover" className="btn btn-secondary">
-              Explore products
-            </Link>
+            <a href="/#marketplace" className="btn btn-secondary">
+              Explore marketplace
+            </a>
+          </div>
+          <div className="search-bar" aria-label="Search marketplace">
+            <input
+              type="text"
+              placeholder="Search marketplace..."
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+            />
           </div>
         </div>
       </section>
@@ -330,12 +371,162 @@ function Home() {
         </div>
       </section>
 
+      <section className="section" id="marketplace">
+        <div className="section-head">
+          <div>
+            <div className="section-kicker">Marketplace</div>
+            <h2 className="section-title">Discover products on Ripple</h2>
+            <p className="section-sub">
+              Real listings from creators using the Ripple workflow.
+            </p>
+          </div>
+        </div>
+        {error && <div className="error">{error}</div>}
+        {loading ? (
+          <div className="marketplace-grid">
+            {[1, 2, 3, 4, 5, 6].map((k) => (
+              <div
+                className="card product-card skeleton-card"
+                key={k}
+                aria-hidden
+              >
+                <div className="skeleton-line skeleton-line--tag" />
+                <div className="skeleton-line skeleton-line--title" />
+                <div className="skeleton-line" />
+                <div className="skeleton-line skeleton-line--short" />
+              </div>
+            ))}
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="empty">No products yet. Be the first to publish.</div>
+        ) : (
+          <div className="marketplace-grid">
+            {filtered.map((product) => (
+              <Link
+                to={productPublicPath(product)}
+                key={product._id}
+                className="card product-card"
+              >
+                {product.thumbnailUrl ? (
+                  <img
+                    src={product.thumbnailUrl}
+                    alt=""
+                    className="product-card__thumb"
+                  />
+                ) : null}
+                <div className="tag">Creator</div>
+                <div className="card-title">{product.title}</div>
+                <p className="card-meta">
+                  {product.summary ? (
+                    product.summary
+                  ) : (
+                    <FormatProductDescription text={product.description} />
+                  )}
+                </p>
+                <div className="product-price">
+                  {formatProductPrice(product)}
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
+      </section>
     </Layout>
   );
 }
 
-function DiscoverPage() {
-  return <Navigate to="/dashboard/discover" replace />;
+function ProductsPage() {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [query, setQuery] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    api
+      .get("/products")
+      .then((res) => setProducts(res.data))
+      .catch(() => setError("Unable to load marketplace products."))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const filtered = useMemo(() => {
+    const lower = query.trim().toLowerCase();
+    if (!lower) return products;
+    return products.filter((p) =>
+      `${p.title} ${p.description}`.toLowerCase().includes(lower),
+    );
+  }, [products, query]);
+
+  return (
+    <Layout>
+      <section className="section" id="products">
+        <div className="section-head">
+          <div>
+            <div className="section-kicker">Live</div>
+            <h2 className="section-title">Products on Ripple</h2>
+            <p className="section-sub">Only published products show up here.</p>
+          </div>
+          <div className="search-bar" aria-label="Search products">
+            <input
+              type="text"
+              placeholder="Search products..."
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+            />
+          </div>
+        </div>
+        {error && <div className="error">{error}</div>}
+        {loading ? (
+          <div className="marketplace-grid">
+            {[1, 2, 3, 4, 5, 6].map((k) => (
+              <div
+                className="card product-card skeleton-card"
+                key={k}
+                aria-hidden
+              >
+                <div className="skeleton-line skeleton-line--tag" />
+                <div className="skeleton-line skeleton-line--title" />
+                <div className="skeleton-line" />
+                <div className="skeleton-line skeleton-line--short" />
+              </div>
+            ))}
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="empty">No published products yet.</div>
+        ) : (
+          <div className="marketplace-grid">
+            {filtered.map((product) => (
+              <Link
+                to={productPublicPath(product)}
+                key={product._id}
+                className="card product-card"
+              >
+                {product.thumbnailUrl ? (
+                  <img
+                    src={product.thumbnailUrl}
+                    alt=""
+                    className="product-card__thumb"
+                  />
+                ) : null}
+                <div className="tag">Creator</div>
+                <div className="card-title">{product.title}</div>
+                <p className="card-meta">
+                  {product.summary ? (
+                    product.summary
+                  ) : (
+                    <FormatProductDescription text={product.description} />
+                  )}
+                </p>
+                <div className="product-price">
+                  {formatProductPrice(product)}
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
+      </section>
+    </Layout>
+  );
 }
 
 function ProductPage() {
@@ -381,7 +572,7 @@ function ProductPage() {
 
     if (product.currency === "USDC") {
       setError(
-        "This listing is priced in USDC. On-chain checkout for USDC is not enabled yet � ask the creator for a SOL-priced version.",
+        "This listing is priced in USDC. On-chain checkout for USDC is not enabled yet — ask the creator for a SOL-priced version.",
       );
       return;
     }
@@ -389,13 +580,14 @@ function ProductPage() {
     setBusy(true);
     try {
       const buyerWallet = publicKey.toBase58();
-      const payoutWallet = product.payoutWallet || product.creatorWallet;
-      setStatus("Preparing transactions...");
-      const { creatorSignature } = await handlePayment({
+      const creatorAddress = product.payoutWallet || product.creatorWallet;
+      setStatus("Preparing split payment...");
+      setStatus("Awaiting wallet approval...");
+      const signature = await handlePayment({
         connection,
         wallet: { publicKey, sendTransaction },
         productPriceSol: product.priceSol,
-        creatorAddress: payoutWallet,
+        creatorAddress,
         platformAddress: RIPPLE_FEE_WALLET,
       });
 
@@ -403,7 +595,7 @@ function ProductPage() {
       await api.post("/purchases/verify", {
         productId: product._id,
         buyerWallet,
-        txSignature: creatorSignature,
+        txSignature: signature,
       });
 
       setStatus("Unlocking content...");
@@ -447,35 +639,37 @@ function ProductPage() {
       <section className="page-section">
         <div className="product-public-card">
           <div className="product-public-media">
-            {product.coverUrl ? (
-              <img src={product.coverUrl} alt="" />
+            {product.coverUrl || product.thumbnailUrl ? (
+              <img src={product.coverUrl || product.thumbnailUrl} alt={product.title} />
             ) : (
-              <div className="product-public-media__ph">No cover</div>
+              <div className="product-public-media__ph">No image</div>
             )}
           </div>
+
           <div className="product-public-panel">
             <div className="product-public-header">
               <h2 className="product-public-title">{product.title}</h2>
-              <div className="product-public-price">
-                {formatProductPrice(product)}
-              </div>
-              <div className="product-public-actions">
-                <button
-                  className="btn btn-primary"
-                  disabled={busy || product.currency === "USDC"}
-                  onClick={buy}
-                >
-                  {busy
-                    ? "Processing..."
-                    : product.currency === "USDC"
-                      ? "USDC soon"
-                      : "Buy now"}
-                </button>
-                <button className="btn btn-outline" type="button">
-                  Add to cart
-                </button>
-              </div>
+              <div className="product-public-price">{formatProductPrice(product)}</div>
             </div>
+
+            <div className="product-public-actions">
+              <button
+                className="btn btn-primary"
+                disabled={busy || product.currency === "USDC"}
+                onClick={buy}
+                type="button"
+              >
+                {busy
+                  ? "Processing..."
+                  : product.currency === "USDC"
+                    ? "USDC soon"
+                    : "Buy now"}
+              </button>
+              <button className="btn btn-outline" type="button">
+                Add to cart
+              </button>
+            </div>
+
             <div className="product-public-copy">
               {product.summary ? (
                 <p className="product-summary">{product.summary}</p>
@@ -483,13 +677,15 @@ function ProductPage() {
               <p className="product-public-desc">
                 <FormatProductDescription text={product.description} />
               </p>
-              {product.productInfo ? (
-                <div className="product-info-block">
-                  <div className="tag">What you get</div>
-                  <p className="section-sub">{product.productInfo}</p>
-                </div>
-              ) : null}
             </div>
+
+            {product.productInfo ? (
+              <div className="product-info-block">
+                <div className="tag">What you get</div>
+                <p className="section-sub">{product.productInfo}</p>
+              </div>
+            ) : null}
+
             {status && (
               <div className="notice product-public-feedback">{status}</div>
             )}
@@ -521,8 +717,7 @@ export function App() {
   return (
     <Routes>
       <Route path="/" element={<Home />} />
-      <Route path="/discover" element={<DiscoverPage />} />
-      <Route path="/products" element={<Navigate to="/dashboard/products" replace />} />
+      <Route path="/products" element={<ProductsPage />} />
       <Route path="/dashboard" element={<DashboardShell />}>
         <Route index element={<Navigate to="home" replace />} />
         <Route path="home" element={<DashboardHomePage />} />
@@ -536,9 +731,3 @@ export function App() {
     </Routes>
   );
 }
-
-
-
-
-
-

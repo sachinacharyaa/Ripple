@@ -416,6 +416,17 @@ a {
   color: var(--ink);
 }
 
+.btn-ghost {
+  border: 1px solid transparent;
+  background: transparent;
+  color: rgba(18, 0, 58, 0.65);
+}
+
+.btn-ghost:hover {
+  background: rgba(18, 0, 58, 0.05);
+  color: var(--ink);
+}
+
 .search-bar {
   display: flex;
   align-items: center;
@@ -676,12 +687,57 @@ textarea {
   padding: 40px 24px 80px;
   text-align: center;
   color: var(--muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
 .footer a {
   color: var(--ink);
   font-weight: 600;
   text-decoration: none;
+}
+
+.footer-powered {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.footer-powered__badge {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  color: var(--ink);
+  background: rgba(153, 69, 255, 0.14);
+  border: 1px solid rgba(153, 69, 255, 0.35);
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+.footer-share-btn {
+  border: 1px solid rgba(18, 0, 58, 0.2);
+  background: #fff;
+  color: var(--ink);
+  border-radius: 10px;
+  padding: 7px 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.footer-share-btn:hover {
+  background: rgba(153, 69, 255, 0.1);
+  border-color: rgba(153, 69, 255, 0.4);
+}
+
+.footer-share-btn svg {
+  width: 16px;
+  height: 16px;
 }
 
 /* Discover marketplace (dark) */
@@ -1645,29 +1701,33 @@ textarea {
 .product-public-card {
   display: grid;
   align-items: start;
-  grid-template-columns: minmax(280px, 1fr) minmax(0, 1.05fr);
+  grid-template-columns: minmax(320px, 420px) minmax(0, 1fr);
+  gap: 30px;
   border: 1px solid rgba(18, 0, 58, 0.14);
-  border-radius: 24px;
-  background: linear-gradient(135deg, #ffffff 0%, #f7f3ff 100%);
-  box-shadow: 0 24px 44px rgba(18, 0, 58, 0.18);
-  overflow: hidden;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 20px 40px rgba(18, 0, 58, 0.1);
+  padding: 22px;
 }
 
 .product-public-media {
   position: relative;
-  background: transparent;
+  width: 100%;
+  height: 560px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #f3f0f8;
+  border: 1px solid rgba(18, 0, 58, 0.08);
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0;
+  flex-shrink: 0;
 }
 
 .product-public-media img {
-  width: auto;
-  max-width: 100%;
-  height: auto;
-  max-height: var(--buyer-media-max);
-  object-fit: contain;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
   display: block;
 }
 
@@ -1685,11 +1745,9 @@ textarea {
 }
 
 .product-public-panel {
-  padding: 32px;
-  border-left: 1px solid rgba(18, 0, 58, 0.12);
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 16px;
   min-width: 0;
 }
 
@@ -1700,23 +1758,26 @@ textarea {
 }
 
 .product-public-title {
-  font-size: clamp(1.7rem, 3.5vw, 2.6rem);
-  font-weight: 800;
-  letter-spacing: -1px;
-  margin: 2px 0 0;
+  font-size: clamp(1.4rem, 3vw, 2rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin: 0;
+  line-height: 1.25;
 }
 
 .product-public-price {
-  font-size: 1.5rem;
-  font-weight: 800;
+  font-size: 1.9rem;
+  font-weight: 500;
   color: var(--ink);
+  margin-top: 4px;
 }
 
 .product-public-actions {
   display: grid;
-  gap: 10px;
-  margin-top: 6px;
-  max-width: 360px;
+  grid-template-columns: 1fr;
+  gap: 8px;
+  margin-top: 4px;
+  max-width: 420px;
 }
 
 .product-public-actions .btn {
@@ -1731,7 +1792,8 @@ textarea {
 }
 
 .product-public-creator {
-  margin-top: 8px;
+  margin-top: 2px;
+  font-size: 0.82rem;
 }
 
 .product-public-copy {
@@ -1741,8 +1803,9 @@ textarea {
 }
 
 .product-public-desc {
-  color: var(--muted);
-  line-height: 1.7;
+  color: #4f4568;
+  line-height: 1.85;
+  font-size: 1rem;
 }
 
 .product-public-feedback {
@@ -1759,15 +1822,16 @@ textarea {
 @media (max-width: 960px) {
   .product-public-card {
     grid-template-columns: 1fr;
+    gap: 18px;
+    padding: 16px;
   }
 
   .product-public-panel {
-    border-left: none;
-    border-top: 1px solid rgba(18, 0, 58, 0.12);
+    border-top: none;
   }
 
-  .product-public-media__ph {
-    height: 260px;
+  .product-public-media {
+    height: 420px;
   }
 }
 
