@@ -26,6 +26,7 @@ import { DashboardNewProductPage } from "./pages/dashboard/DashboardNewProductPa
 import { DashboardEditProductPage } from "./pages/dashboard/DashboardEditProductPage";
 import { DashboardPaymentPage } from "./pages/dashboard/DashboardPaymentPage";
 import { DashboardDiscoverPage } from "./pages/dashboard/DashboardDiscoverPage";
+import { DashboardPurchasesPage } from "./pages/dashboard/DashboardPurchasesPage";
 
 type Product = ProductShape;
 
@@ -782,6 +783,7 @@ export function App() {
         <Route path="products/new" element={<DashboardNewProductPage />} />
         <Route path="products/:id/edit" element={<DashboardEditProductPage />} />
         <Route path="payment" element={<DashboardPaymentPage />} />
+        <Route path="purchases" element={<DashboardPurchasesPage />} />
         <Route path="discover" element={<DashboardDiscoverPage />} />
       </Route>
       <Route path="/p/:id" element={<ProductPage />} />

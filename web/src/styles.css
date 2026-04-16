@@ -2227,6 +2227,34 @@ textarea {
   align-items: center;
 }
 
+.gum-chip-row {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.gum-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(18, 0, 58, 0.06);
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #3a2b63;
+}
+
+.gum-chip--muted {
+  background: rgba(18, 0, 58, 0.03);
+  color: #7b6e9b;
+}
+
+.gum-table-actions {
+  display: inline-flex;
+  gap: 10px;
+  align-items: center;
+}
+
 .gum-discover-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));

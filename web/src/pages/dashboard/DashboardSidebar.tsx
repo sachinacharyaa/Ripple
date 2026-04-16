@@ -41,6 +41,12 @@ export function DashboardSidebar() {
       </nav>
       <div className="gum-sidebar__divider" />
       <nav className="gum-nav gum-nav--secondary">
+        <NavLink to="/dashboard/purchases" className={linkClass}>
+          <span className="gum-nav__ico" aria-hidden>
+            ✓
+          </span>
+          Purchases
+        </NavLink>
         <NavLink to="/dashboard/discover" className={linkClass}>
           <span className="gum-nav__ico" aria-hidden>
             *
