@@ -60,9 +60,7 @@ function Coins() {
       <div className="coin coin--2" aria-hidden="true">
         <div className="coin__face">R</div>
       </div>
-      <div className="coin coin--3" aria-hidden="true">
-        <div className="coin__face">R</div>
-      </div>
+
       <div className="coin coin--4" aria-hidden="true">
         <div className="coin__face">R</div>
       </div>
@@ -112,18 +110,15 @@ function Layout({
         <nav className="nav-links">
           {isHome ? (
             <>
-              <a href="/#discover">Discover</a>
+              <Link to="/dashboard/discover">Discover</Link>
               <a href="/#features">Features</a>
               <a href="/#creators">Creators</a>
-              <Link to="/products">Products</Link>
-              <a href="/#marketplace" className="nav-link--outlined">
-                Marketplace
-              </a>
+              <Link to="/dashboard/products">Products</Link>
             </>
           ) : (
             <>
               <Link to="/">Home</Link>
-              <Link to="/products">Products</Link>
+              <Link to="/dashboard/products">Products</Link>
               <Link to="/dashboard/home">Dashboard</Link>
             </>
           )}
@@ -170,27 +165,6 @@ function Layout({
 }
 
 function Home() {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [query, setQuery] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-
-  useEffect(() => {
-    api
-      .get("/products")
-      .then((res) => setProducts(res.data))
-      .catch(() => setError("Unable to load marketplace products."))
-      .finally(() => setLoading(false));
-  }, []);
-
-  const filtered = useMemo(() => {
-    const lower = query.trim().toLowerCase();
-    if (!lower) return products;
-    return products.filter((p) =>
-      `${p.title} ${p.description}`.toLowerCase().includes(lower),
-    );
-  }, [products, query]);
-
   return (
     <Layout>
       <section className="hero" id="discover">
@@ -220,17 +194,9 @@ function Home() {
             <Link to="/dashboard/home" className="btn btn-primary">
               Start selling
             </Link>
-            <a href="/#marketplace" className="btn btn-secondary">
-              Explore marketplace
-            </a>
-          </div>
-          <div className="search-bar" aria-label="Search marketplace">
-            <input
-              type="text"
-              placeholder="Search marketplace..."
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-            />
+            <Link to="/dashboard/discover" className="btn btn-secondary">
+              Marketplace
+            </Link>
           </div>
         </div>
       </section>
@@ -377,66 +343,6 @@ function Home() {
         </div>
       </section>
 
-      <section className="section" id="marketplace">
-        <div className="section-head">
-          <div>
-            <div className="section-kicker">Marketplace</div>
-            <h2 className="section-title">Discover products on Ripple</h2>
-            <p className="section-sub">
-              Real listings from creators using the Ripple workflow.
-            </p>
-          </div>
-        </div>
-        {error && <div className="error">{error}</div>}
-        {loading ? (
-          <div className="marketplace-grid">
-            {[1, 2, 3, 4, 5, 6].map((k) => (
-              <div
-                className="card product-card skeleton-card"
-                key={k}
-                aria-hidden
-              >
-                <div className="skeleton-line skeleton-line--tag" />
-                <div className="skeleton-line skeleton-line--title" />
-                <div className="skeleton-line" />
-                <div className="skeleton-line skeleton-line--short" />
-              </div>
-            ))}
-          </div>
-        ) : filtered.length === 0 ? (
-          <div className="empty">No products yet. Be the first to publish.</div>
-        ) : (
-          <div className="marketplace-grid">
-            {filtered.map((product) => (
-              <Link
-                to={productPublicPath(product)}
-                key={product._id}
-                className="card product-card"
-              >
-                {product.thumbnailUrl ? (
-                  <img
-                    src={product.thumbnailUrl}
-                    alt=""
-                    className="product-card__thumb"
-                  />
-                ) : null}
-                <div className="tag">Creator</div>
-                <div className="card-title">{product.title}</div>
-                <p className="card-meta">
-                  {product.summary ? (
-                    product.summary
-                  ) : (
-                    <FormatProductDescription text={product.description} />
-                  )}
-                </p>
-                <div className="product-price">
-                  {formatProductPrice(product)}
-                </div>
-              </Link>
-            ))}
-          </div>
-        )}
-      </section>
     </Layout>
   );
 }
@@ -678,21 +584,25 @@ function ProductPage() {
             </div>
 
             <div className="product-public-actions">
-              <button
-                className="btn btn-primary"
-                disabled={busy || product.currency === "USDC"}
-                onClick={buy}
-                type="button"
-              >
-                {busy
-                  ? "Processing..."
-                  : product.currency === "USDC"
-                    ? "USDC soon"
-                    : "Buy now"}
-              </button>
-              <button className="btn btn-outline" type="button">
-                Add to cart
-              </button>
+              {!contentLink && (
+                <button className="btn btn-outline" type="button">
+                  Add to cart
+                </button>
+              )}
+              {!contentLink && (
+                <button
+                  className="btn btn-primary"
+                  disabled={busy || product.currency === "USDC"}
+                  onClick={buy}
+                  type="button"
+                >
+                  {busy
+                    ? "Processing..."
+                    : product.currency === "USDC"
+                      ? "USDC soon"
+                      : "Buy now"}
+                </button>
+              )}
             </div>
 
             {status && !error ? (

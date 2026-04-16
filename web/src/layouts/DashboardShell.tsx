@@ -1,4 +1,4 @@
-import { Outlet } from "react-router-dom";
+import { Link, Outlet } from "react-router-dom";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { DashboardConnectScreen } from "../pages/dashboard/DashboardConnectScreen";
@@ -14,7 +14,9 @@ export function DashboardShell() {
   return (
     <div className="gum-dashboard">
       <header className="gum-topbar">
-        <span className="gum-topbar__brand">Ripple</span>
+        <Link to="/" className="gum-topbar__brand">
+          Ripple
+        </Link>
         <div className="gum-topbar__right">
           <WalletMultiButton className="gum-wallet-btn gum-wallet-btn--compact" />
         </div>
