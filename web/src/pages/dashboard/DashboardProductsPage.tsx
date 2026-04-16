@@ -101,7 +101,12 @@ export function DashboardProductsPage() {
                         <div className="gum-table-name">
                           {p.thumbnailUrl ? <img src={p.thumbnailUrl} alt="" className="gum-table-thumb" /> : <div className="gum-table-thumb gum-table-thumb--ph" />}
                           <div>
-                            <div className="gum-table-name__title">{p.title}</div>
+                            <div className="gum-table-name__title-row">
+                              <div className="gum-table-name__title">{p.title}</div>
+                              <Link to={`/dashboard/products/${p._id}/edit`} className="gum-link gum-link--edit">
+                                Edit
+                              </Link>
+                            </div>
                             <a href={productPublicUrl(p)} className="gum-table-name__url" target="_blank" rel="noreferrer">
                               {productPublicUrl(p).replace(/^https?:\/\//, "")}
                             </a>

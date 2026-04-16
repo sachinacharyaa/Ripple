@@ -11,7 +11,11 @@ import { motion } from "framer-motion";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { api } from "./lib/api";
-import { handlePayment, RIPPLE_FEE_WALLET } from "./lib/payment";
+import axios from "axios";
+import {
+  handlePayment,
+  RIPPLE_FEE_WALLET,
+} from "./lib/payment";
 import { formatProductPrice, productPublicPath } from "./lib/productUtils";
 import { FormatProductDescription } from "./lib/richDescription";
 import type { ProductShape } from "./types/product";
@@ -19,6 +23,7 @@ import { DashboardShell } from "./layouts/DashboardShell";
 import { DashboardHomePage } from "./pages/dashboard/DashboardHomePage";
 import { DashboardProductsPage } from "./pages/dashboard/DashboardProductsPage";
 import { DashboardNewProductPage } from "./pages/dashboard/DashboardNewProductPage";
+import { DashboardEditProductPage } from "./pages/dashboard/DashboardEditProductPage";
 import { DashboardPaymentPage } from "./pages/dashboard/DashboardPaymentPage";
 import { DashboardDiscoverPage } from "./pages/dashboard/DashboardDiscoverPage";
 
@@ -537,9 +542,16 @@ function ProductPage() {
   const [product, setProduct] = useState<Product | null>(null);
   const [loadError, setLoadError] = useState("");
   const [contentLink, setContentLink] = useState("");
+  const [txSignature, setTxSignature] = useState("");
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState("");
   const [error, setError] = useState("");
+  const networkLabel = useMemo(() => {
+    const endpoint = (connection.rpcEndpoint || "").toLowerCase();
+    if (endpoint.includes("testnet")) return "testnet";
+    if (endpoint.includes("mainnet")) return "mainnet";
+    return "devnet";
+  }, [connection.rpcEndpoint]);
 
   useEffect(() => {
     if (!id && !slug) return;
@@ -564,6 +576,7 @@ function ProductPage() {
     if (!product) return;
     setError("");
     setStatus("");
+    setTxSignature("");
 
     if (!publicKey) {
       setError("Connect your wallet first (header or wallet button).");
@@ -590,6 +603,7 @@ function ProductPage() {
         creatorAddress,
         platformAddress: RIPPLE_FEE_WALLET,
       });
+      setTxSignature(signature);
 
       setStatus("Verifying on-chain payment...");
       await api.post("/purchases/verify", {
@@ -605,10 +619,16 @@ function ProductPage() {
       });
       setContentLink(access.data.contentUrl);
       setStatus("Unlocked! Enjoy your content.");
-    } catch {
-      setError(
-        "Payment failed. Ensure you are on the same network as the app (devnet by default) and try again.",
-      );
+    } catch (e) {
+      setStatus("");
+      if (axios.isAxiosError(e)) {
+        const data = e.response?.data as { message?: string; error?: string } | undefined;
+        setError(data?.message || data?.error || e.message);
+      } else if (e instanceof Error) {
+        setError(e.message || `Payment failed. Make sure your wallet is connected to ${networkLabel} and try again.`);
+      } else {
+        setError(`Payment failed. Make sure your wallet is connected to ${networkLabel} and try again.`);
+      }
     } finally {
       setBusy(false);
     }
@@ -633,6 +653,10 @@ function ProductPage() {
       </Layout>
     );
   }
+
+  const explorerProofUrl = txSignature
+    ? `https://explorer.solana.com/tx/${txSignature}?cluster=${networkLabel}`
+    : "";
 
   return (
     <Layout>
@@ -670,6 +694,60 @@ function ProductPage() {
               </button>
             </div>
 
+            {status && !error ? (
+              <div className="product-public-toast product-public-toast--info">
+                {status}
+              </div>
+            ) : null}
+            {error ? (
+              <div className="product-public-toast product-public-toast--error">
+                {error}
+              </div>
+            ) : null}
+
+            {contentLink ? (
+              <div className="product-public-unlock product-public-unlock--hero">
+                <div className="product-public-unlock__head">
+                  <div>
+                    <div className="tag tag--success">Access unlocked</div>
+                    <p className="product-public-unlock__title">
+                      Your content link is ready.
+                    </p>
+                  </div>
+                  {txSignature ? (
+                    <a
+                      className="product-public-proof"
+                      href={explorerProofUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      Transaction proof
+                    </a>
+                  ) : null}
+                </div>
+                <div className="product-public-unlock__actions">
+                  <a
+                    className="btn btn-secondary"
+                    href={contentLink}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    Open content
+                  </a>
+                  {txSignature ? (
+                    <a
+                      className="btn btn-outline"
+                      href={explorerProofUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      View on explorer
+                    </a>
+                  ) : null}
+                </div>
+              </div>
+            ) : null}
+
             <div className="product-public-copy">
               {product.summary ? (
                 <p className="product-summary">{product.summary}</p>
@@ -685,27 +763,6 @@ function ProductPage() {
                 <p className="section-sub">{product.productInfo}</p>
               </div>
             ) : null}
-
-            {status && (
-              <div className="notice product-public-feedback">{status}</div>
-            )}
-            {error && (
-              <div className="error product-public-feedback">{error}</div>
-            )}
-            {contentLink && (
-              <div className="product-public-unlock">
-                <div className="tag">Access unlocked</div>
-                <p className="card-meta">Your content link is ready.</p>
-                <a
-                  className="btn btn-secondary"
-                  href={contentLink}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  Open content
-                </a>
-              </div>
-            )}
           </div>
         </div>
       </section>
@@ -723,6 +780,7 @@ export function App() {
         <Route path="home" element={<DashboardHomePage />} />
         <Route path="products" element={<DashboardProductsPage />} />
         <Route path="products/new" element={<DashboardNewProductPage />} />
+        <Route path="products/:id/edit" element={<DashboardEditProductPage />} />
         <Route path="payment" element={<DashboardPaymentPage />} />
         <Route path="discover" element={<DashboardDiscoverPage />} />
       </Route>
