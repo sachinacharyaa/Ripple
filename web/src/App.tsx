@@ -126,7 +126,45 @@ function Layout({
       >
         {children}
       </main>
-      {/* Footer removed across all pages */}
+      {variant !== "dashboard" && (
+        <footer className="gr-footer bg-solana-gradient">
+          <div className="gr-footer-cta">
+            <div className="gr-container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              <h2 className="gr-title-huge text-white" style={{ textAlign: "center", marginBottom: "24px" }}>Ready to earn?</h2>
+              <p className="gr-subtitle" style={{ color: "rgba(255,255,255,0.85)", textAlign: "center", margin: "0 auto 40px", maxWidth: "600px" }}>
+                A tasteful & useful crypto app built for creators. Connect your wallet and instantly monetize your content seamlessly on Solana.
+              </p>
+              <Link to="/dashboard/home" className="gr-btn gr-btn-green">
+                Start selling now
+              </Link>
+            </div>
+          </div>
+          
+          <div className="gr-footer-bottom gr-container">
+            <div className="gr-footer-brand">
+              <Link to="/" className="logo text-white" style={{ fontSize: "2.2rem" }}>Ripple.</Link>
+              <span className="gr-footer-desc">The Web3 creator monetization layer.</span>
+            </div>
+            <div className="gr-footer-links">
+              <div className="gr-footer-col">
+                <strong>Platform</strong>
+                <Link to="/dashboard/discover">Discover</Link>
+                <Link to="/dashboard/home">Dashboard</Link>
+              </div>
+              <div className="gr-footer-col">
+                <strong>Legal</strong>
+                <a href="#">Terms of Service</a>
+                <a href="#">Privacy Policy</a>
+              </div>
+              <div className="gr-footer-col">
+                <strong>Socials</strong>
+                <a href="#">Twitter / X</a>
+                <a href="#">Discord</a>
+              </div>
+            </div>
+          </div>
+        </footer>
+      )}
     </div>
   );
 }
