@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import {
   Link,
   Navigate,
@@ -86,17 +86,6 @@ function Layout({
 }) {
   const location = useLocation();
   const isHome = location.pathname === "/";
-  const [copied, setCopied] = useState(false);
-
-  const copyCurrentLink = async () => {
-    try {
-      await navigator.clipboard.writeText(window.location.href);
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 1400);
-    } catch {
-      setCopied(false);
-    }
-  };
 
   return (
     <div className={variant === "dashboard" ? "page page--dashboard" : "page"}>
@@ -137,29 +126,7 @@ function Layout({
       >
         {children}
       </main>
-      <footer
-        className={
-          variant === "dashboard" ? "footer footer--dashboard-pro" : "footer"
-        }
-      >
-        <span className="footer-powered">
-          Powered by <span className="footer-powered__badge">Ripple</span>
-        </span>
-        <button
-          className="footer-share-btn"
-          type="button"
-          aria-label="Copy page link"
-          onClick={copyCurrentLink}
-        >
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path
-              d="M15 8a3 3 0 1 0-2.83-4h-.34A3 3 0 0 0 9 8l-3.8 2.17a3 3 0 1 0 0 3.66L9 16a3 3 0 1 0 2.83 4h.34A3 3 0 0 0 15 16l3.8-2.17a3 3 0 1 0 0-3.66L15 8Z"
-              fill="currentColor"
-            />
-          </svg>
-          <span>{copied ? "Copied" : "Share"}</span>
-        </button>
-      </footer>
+      {/* Footer removed across all pages */}
     </div>
   );
 }
@@ -201,143 +168,144 @@ function Home() {
         </div>
       </section>
 
-      <section className="section" id="features">
-        <div className="section-head">
-          <div>
-            <div className="section-kicker">Vision</div>
-            <h2 className="section-title">
-              A creator-first Solana marketplace
-            </h2>
-            <p className="section-sub">
-              Ripple removes platform lock-in so creators can sell anything,
-              anywhere, and get paid instantly with crypto.
-            </p>
-          </div>
-        </div>
-        <div className="grid grid-3">
-          <div className="card">
-            <div className="card-title">The problem</div>
-            <p className="card-meta">
-              Legacy platforms charge high fees, require Stripe/PayPal, and can
-              ban creators.
-            </p>
-          </div>
-          <div className="card">
-            <div className="card-title">The solution</div>
-            <p className="card-meta">
-              Sell digital content, set a SOL price, and unlock access
-              immediately with on-chain verification.
-            </p>
-          </div>
-          <div className="card">
-            <div className="card-title">The impact</div>
-            <p className="card-meta">
-              Creators keep control, earn globally, and gate access using
-              wallets instead of emails.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      <section className="section" id="creators">
-        <div className="section-head">
-          <div>
-            <div className="section-kicker">Target users</div>
-            <h2 className="section-title">Built for modern creators</h2>
-          </div>
-        </div>
-        <div className="grid grid-3">
-          <div className="card">
-            <div className="card-title">Primary</div>
-            <p className="card-meta">
-              Indie creators, students, devs, designers, freelancers, and
-              AI/tech educators.
-            </p>
-          </div>
-          <div className="card">
-            <div className="card-title">Secondary</div>
-            <p className="card-meta">
-              Buyers looking for templates, courses, notes, and creator tools.
-            </p>
-          </div>
-          <div className="card">
-            <div className="card-title">Global</div>
-            <p className="card-meta">
-              Anyone blocked by legacy payment rails can earn with Solana.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      <section className="section">
-        <div className="section-head">
-          <div>
-            <div className="section-kicker">Core features</div>
-            <h2 className="section-title">
-              Everything you need to sell on-chain
-            </h2>
-            <p className="section-sub">
-              SOL payments now, USDC support coming next.
-            </p>
-          </div>
-        </div>
-        <div className="grid grid-3">
-          {[
-            "Wallet authentication with Phantom",
-            "Creator dashboard for products and earnings",
-            "Public product page with Buy Now flow",
-            "On-chain payment verification",
-            "Instant access unlock after purchase",
-            "Activity metrics on your dashboard home",
-          ].map((item) => (
-            <div className="card" key={item}>
-              <div className="card-title">{item}</div>
-              <p className="card-meta">
-                Powered by Solana for fast settlement.
-              </p>
+      <section className="gr-section bg-yellow" id="features">
+        <div className="gr-container">
+          <div className="gr-tag bg-pink">Vision</div>
+          <h2 className="gr-title-huge">A creator-first<br />Solana marketplace.</h2>
+          <p className="gr-subtitle">
+            Ripple removes platform lock-in so creators can sell anything,
+            anywhere, and get paid instantly with crypto.
+          </p>
+          <div className="gr-grid-3 mt-16">
+            <div className="gr-card">
+              <div className="gr-card-content">
+                <div className="gr-icon-box bg-pink">⛔</div>
+                <h3 className="gr-card-title">The problem</h3>
+                <p className="gr-card-meta">
+                  Legacy platforms charge high fees, require Stripe/PayPal, and can
+                  ban creators without warning.
+                </p>
+              </div>
             </div>
-          ))}
-        </div>
-      </section>
-
-      <section className="section" id="how-it-works">
-        <div className="section-head">
-          <div>
-            <div className="section-kicker">User flow</div>
-            <h2 className="section-title">From listing to unlock in minutes</h2>
-          </div>
-        </div>
-        <div className="grid grid-2">
-          <div className="card">
-            <div className="card-title">Creator flow</div>
-            <div className="flow-column">
-              {[
-                "Connect your wallet",
-                "Create a product with title, price, and content link",
-                "Publish and share your product page",
-                "Track sales and earnings in the dashboard",
-              ].map((step, index) => (
-                <div className="flow-step" key={step}>
-                  <div className="flow-step-number">{index + 1}</div>
-                  <p>{step}</p>
-                </div>
-              ))}
+            <div className="gr-card">
+              <div className="gr-card-content">
+                <div className="gr-icon-box bg-mint">⚡</div>
+                <h3 className="gr-card-title">The solution</h3>
+                <p className="gr-card-meta">
+                  Sell digital content, set a SOL price, and unlock access
+                  immediately with on-chain verification.
+                </p>
+              </div>
+            </div>
+            <div className="gr-card">
+              <div className="gr-card-content">
+                <div className="gr-icon-box bg-lavender">🌍</div>
+                <h3 className="gr-card-title">The impact</h3>
+                <p className="gr-card-meta">
+                  Creators keep control, earn globally, and gate access using
+                  wallets instead of emails.
+                </p>
+              </div>
             </div>
           </div>
-          <div className="card">
-            <div className="card-title">Buyer flow</div>
-            <div className="flow-column">
-              {[
-                "Open the product page",
-                "Connect wallet and click Buy",
-                "Approve the Solana transfer",
-                "Instantly unlock the gated link",
-              ].map((step, index) => (
-                <div className="flow-step" key={step}>
-                  <div className="flow-step-number">{index + 1}</div>
-                  <p>{step}</p>
+        </div>
+      </section>
+
+      <section className="gr-section bg-pink" id="creators">
+        <div className="gr-container">
+          <div className="gr-tag bg-yellow">Target Users</div>
+          <h2 className="gr-title-huge">Built for modern creators.</h2>
+          <div className="gr-grid-3 mt-16">
+            <div className="gr-card">
+              <div className="gr-card-content">
+                <h3 className="gr-card-title">Primary</h3>
+                <p className="gr-card-meta">
+                  Indie creators, students, devs, designers, freelancers, and
+                  AI/tech educators looking to monetize fast.
+                </p>
+              </div>
+            </div>
+            <div className="gr-card">
+              <div className="gr-card-content">
+                <h3 className="gr-card-title">Secondary</h3>
+                <p className="gr-card-meta">
+                  Buyers looking for high-quality templates, courses, notes,
+                  and exclusive creator tools.
+                </p>
+              </div>
+            </div>
+            <div className="gr-card">
+              <div className="gr-card-content">
+                <div className="gr-icon-box bg-white">🌐</div>
+                <h3 className="gr-card-title">Global Reach</h3>
+                <p className="gr-card-meta">
+                  Anyone blocked by legacy payment rails can start earning
+                  immediately with Solana.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="gr-section bg-mint">
+        <div className="gr-container">
+          <div className="gr-tag bg-white">Core features</div>
+          <h2 className="gr-title-huge">Everything you need to sell on-chain.</h2>
+          <p className="gr-subtitle">
+            SOL payments now, USDC support coming next. Quick and seamless.
+          </p>
+          <div className="gr-grid-3 mt-16">
+            {[
+              { title: "Wallet Auth", icon: "🔑", bg: "bg-yellow", desc: "One-click login with Phantom." },
+              { title: "Creator Dashboard", icon: "📊", bg: "bg-pink", desc: "Manage products and track your earnings." },
+              { title: "Public Storefront", icon: "🛍️", bg: "bg-white", desc: "A beautiful Buy Now flow for your audience." },
+              { title: "On-chain Payments", icon: "⛓️", bg: "bg-lavender", desc: "Instant settlement via Solana." },
+              { title: "Instant Unlock", icon: "🔓", bg: "bg-yellow", desc: "Buyers get immediate access post-purchase." },
+              { title: "Activity Metrics", icon: "📈", bg: "bg-white", desc: "Keep an eye on sales from your dashboard home." },
+            ].map((item, idx) => (
+              <div className="gr-card" key={idx}>
+                <div className="gr-card-content">
+                  <div className={`gr-icon-box ${item.bg}`}>{item.icon}</div>
+                  <h3 className="gr-card-title">{item.title}</h3>
+                  <p className="gr-card-meta">{item.desc}</p>
                 </div>
-              ))}
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="gr-section bg-black text-white" id="how-it-works">
+        <div className="gr-container">
+          <div className="gr-tag bg-lavender text-ink">User flow</div>
+          <h2 className="gr-title-huge text-white">From listing to unlock in minutes.</h2>
+          <div className="gr-grid-2 mt-16">
+            <div className="gr-timeline-card bg-white text-ink">
+              <h3 className="gr-card-title">Creator flow</h3>
+              <ul className="gr-timeline">
+                {[
+                  "Connect your wallet",
+                  "Create a product with title, price, and content link",
+                  "Publish and share your product page",
+                  "Track sales and earnings in the dashboard",
+                ].map((step) => (
+                  <li key={step}>{step}</li>
+                ))}
+              </ul>
+            </div>
+            <div className="gr-timeline-card bg-yellow text-ink">
+              <h3 className="gr-card-title">Buyer flow</h3>
+              <ul className="gr-timeline">
+                {[
+                  "Open the product page",
+                  "Connect wallet and click Buy",
+                  "Approve the Solana transfer",
+                  "Instantly unlock the gated link",
+                ].map((step) => (
+                  <li key={step}>{step}</li>
+                ))}
+              </ul>
             </div>
           </div>
         </div>
@@ -453,12 +421,23 @@ function ProductPage() {
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState("");
   const [error, setError] = useState("");
+  const [shareCopied, setShareCopied] = useState(false);
   const networkLabel = useMemo(() => {
     const endpoint = (connection.rpcEndpoint || "").toLowerCase();
     if (endpoint.includes("testnet")) return "testnet";
     if (endpoint.includes("mainnet")) return "mainnet";
     return "devnet";
   }, [connection.rpcEndpoint]);
+
+  const copyShareLink = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      setShareCopied(true);
+      window.setTimeout(() => setShareCopied(false), 1400);
+    } catch {
+      setShareCopied(false);
+    }
+  };
 
   useEffect(() => {
     if (!id && !slug) return;
@@ -579,8 +558,30 @@ function ProductPage() {
 
           <div className="product-public-panel">
             <div className="product-public-header">
-              <h2 className="product-public-title">{product.title}</h2>
-              <div className="product-public-price">{formatProductPrice(product)}</div>
+              <div className="product-public-title-row">
+                <h2 className="product-public-title">{product.title}</h2>
+                <button
+                  className="product-public-share-btn"
+                  type="button"
+                  aria-label="Share product link"
+                  onClick={copyShareLink}
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 512 512"
+                    aria-hidden="true"
+                  >
+                    <path
+                      d="M384 192c53 0 96-43 96-96s-43-96-96-96-96 43-96 96c0 5.4 .5 10.8 1.3 16L159.6 184.1c-16.9-15-39.2-24.1-63.6-24.1-53 0-96 43-96 96s43 96 96 96c24.4 0 46.6-9.1 63.6-24.1L289.3 400c-.9 5.2-1.3 10.5-1.3 16 0 53 43 96 96 96s96-43 96-96-43-96-96-96c-24.4 0-46.6 9.1-63.6 24.1L190.7 272c.9-5.2 1.3-10.5 1.3-16s-.5-10.8-1.3-16l129.7-72.1c16.9 15 39.2 24 63.6 24z"
+                      fill="currentColor"
+                    />
+                  </svg>
+                  <span>{shareCopied ? "Copied" : "Share"}</span>
+                </button>
+              </div>
+              <div className="product-public-price">
+                {formatProductPrice(product)}
+              </div>
             </div>
 
             <div className="product-public-actions">
