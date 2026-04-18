@@ -3,13 +3,15 @@ import { PublicKey, SystemProgram } from "@solana/web3.js";
 const SYSTEM_PROGRAM_ID = SystemProgram.programId.toBase58();
 
 /**
- * Verify a confirmed transaction contains a system transfer:
- * buyer -> creator for exactly expectedLamports.
+ * Verify a confirmed transaction contains split system transfers:
+ * buyer -> creator and buyer -> platform for expected amounts.
  */
-export async function verifySolTransfer(connection, signature, buyerWallet, creatorWallet, expectedLamports) {
+export async function verifySolTransfer(connection, signature, buyerWallet, creatorWallet, platformWallet, expectedCreatorLamports, expectedFeeLamports) {
   const buyer = new PublicKey(buyerWallet);
   const creator = new PublicKey(creatorWallet);
-  const want = BigInt(expectedLamports);
+  const platform = new PublicKey(platformWallet);
+  const wantCreator = BigInt(expectedCreatorLamports);
+  const wantFee = BigInt(expectedFeeLamports);
 
   const parsed = await connection.getParsedTransaction(signature, {
     maxSupportedTransactionVersion: 0,
@@ -29,20 +31,33 @@ export async function verifySolTransfer(connection, signature, buyerWallet, crea
     }
   }
 
-  for (const ix of candidates) {
-    if (instructionMatchesTransfer(ix, buyer, creator, want)) return { ok: true };
-  }
+  const parsedMatch = verifyTransfersFromParsed(candidates, buyer, creator, platform, wantCreator, wantFee);
+  if (parsedMatch.ok) return { ok: true };
 
   const raw = await connection.getTransaction(signature, {
     maxSupportedTransactionVersion: 0,
     commitment: "confirmed",
   });
   if (raw?.meta && raw.transaction) {
-    const ok = verifyByBalanceDelta(raw, buyer, creator, want);
-    if (ok) return { ok: true };
+    const balanceMatch = verifyByBalanceDelta(raw, buyer, creator, platform, wantCreator, wantFee);
+    if (balanceMatch.ok) return { ok: true };
+    return {
+      ok: false,
+      reason:
+        `Split transfer mismatch. Expected creator=${wantCreator.toString()} lamports, ` +
+        `platform=${wantFee.toString()} lamports; parsed creator=${parsedMatch.toCreator.toString()}, ` +
+        `parsed platform=${parsedMatch.toPlatform.toString()}, balance creator=${balanceMatch.toCreator.toString()}, ` +
+        `balance platform=${balanceMatch.toPlatform.toString()}.`,
+    };
   }
 
-  return { ok: false, reason: "No matching SOL transfer from buyer to creator for the listed price" };
+  return {
+    ok: false,
+    reason:
+      `No valid split SOL transfer found. Expected creator=${wantCreator.toString()} lamports, ` +
+      `platform=${wantFee.toString()} lamports; parsed creator=${parsedMatch.toCreator.toString()}, ` +
+      `parsed platform=${parsedMatch.toPlatform.toString()}.`,
+  };
 }
 
 function programIdString(ix) {
@@ -52,20 +67,43 @@ function programIdString(ix) {
   return "";
 }
 
-function instructionMatchesTransfer(ix, buyer, creator, wantLamports) {
-  if (programIdString(ix) !== SYSTEM_PROGRAM_ID) return false;
+function transferAmount(ix, buyer, target) {
+  if (programIdString(ix) !== SYSTEM_PROGRAM_ID) return 0n;
   const parsed = ix.parsed;
-  if (!parsed || parsed.type !== "transfer") return false;
-  const { source, destination, lamports } = parsed.info;
-  if (!source || !destination || lamports === undefined) return false;
+  if (!parsed || parsed.type !== "transfer") return 0n;
+  const { source, destination: infoDestination, lamports } = parsed.info;
+  if (!source || !infoDestination || lamports === undefined) return 0n;
   try {
     const src = new PublicKey(source);
-    const dst = new PublicKey(destination);
-    if (!src.equals(buyer) || !dst.equals(creator)) return false;
-    return BigInt(lamports) === wantLamports;
+    const dst = new PublicKey(infoDestination);
+    if (!src.equals(buyer) || !dst.equals(target)) return 0n;
+    return BigInt(lamports);
   } catch {
-    return false;
+    return 0n;
   }
+}
+
+function verifyTransfersFromParsed(candidates, buyer, creator, platform, wantCreator, wantFee) {
+  let toCreator = 0n;
+  let toPlatform = 0n;
+  for (const ix of candidates) {
+    toCreator += transferAmount(ix, buyer, creator);
+    toPlatform += transferAmount(ix, buyer, platform);
+  }
+
+  if (creator.equals(platform)) {
+    return {
+      ok: toCreator === wantCreator + wantFee,
+      toCreator,
+      toPlatform,
+    };
+  }
+
+  return {
+    ok: toCreator === wantCreator && toPlatform === wantFee,
+    toCreator,
+    toPlatform,
+  };
 }
 
 function getAccountKeysForTx(tx) {
@@ -84,28 +122,51 @@ function getAccountKeysForTx(tx) {
   return out;
 }
 
-function verifyByBalanceDelta(tx, buyer, creator, wantLamports) {
+function verifyByBalanceDelta(tx, buyer, creator, platform, wantCreatorLamports, wantFeeLamports) {
   const keys = getAccountKeysForTx(tx);
   const meta = tx.meta;
-  if (!meta?.preBalances || !meta?.postBalances) return false;
+  if (!meta?.preBalances || !meta?.postBalances) {
+    return { ok: false, toCreator: 0n, toPlatform: 0n };
+  }
 
   let buyerIdx = -1;
   let creatorIdx = -1;
+  let platformIdx = -1;
   for (let i = 0; i < keys.length; i++) {
     if (keys[i].equals(buyer)) buyerIdx = i;
     if (keys[i].equals(creator)) creatorIdx = i;
+    if (keys[i].equals(platform)) platformIdx = i;
   }
-  if (buyerIdx < 0 || creatorIdx < 0) return false;
+  if (buyerIdx < 0 || creatorIdx < 0 || platformIdx < 0) {
+    return { ok: false, toCreator: 0n, toPlatform: 0n };
+  }
 
   const preB = meta.preBalances[buyerIdx];
   const postB = meta.postBalances[buyerIdx];
   const preC = meta.preBalances[creatorIdx];
   const postC = meta.postBalances[creatorIdx];
+  const preP = meta.preBalances[platformIdx];
+  const postP = meta.postBalances[platformIdx];
 
   const toCreator = BigInt(postC) - BigInt(preC);
+  const toPlatform = BigInt(postP) - BigInt(preP);
   const fromBuyer = BigInt(preB) - BigInt(postB);
+  const total = wantCreatorLamports + wantFeeLamports;
 
-  if (toCreator !== wantLamports) return false;
-  if (fromBuyer < wantLamports) return false;
-  return true;
+  if (creator.equals(platform)) {
+    return {
+      ok: toCreator === total && fromBuyer >= total,
+      toCreator,
+      toPlatform,
+    };
+  }
+
+  return {
+    ok:
+      toCreator === wantCreatorLamports &&
+      toPlatform === wantFeeLamports &&
+      fromBuyer >= total,
+    toCreator,
+    toPlatform,
+  };
 }

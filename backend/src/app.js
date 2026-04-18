@@ -6,6 +6,7 @@ import { z } from "zod";
 import { verifySolTransfer } from "./verifyTransfer.js";
 
 const connection = new Connection(process.env.SOLANA_RPC || "https://api.devnet.solana.com", "confirmed");
+const RIPPLE_FEE_WALLET = process.env.RIPPLE_FEE_WALLET || "G6DKYcQnySUk1ZYYuR1HMovVscWjAtyDQb6GhqrvJYnw";
 
 let mongoConnectPromise = null;
 
@@ -105,6 +106,33 @@ const createProductSchema = z
     { message: "Price must be positive for the selected currency" },
   );
 
+const updateProductSchema = z
+  .object({
+    title: z.string().min(2).optional(),
+    description: z.string().min(5).optional(),
+    summary: z.string().max(2000).optional(),
+    priceSol: z.number().min(0).optional(),
+    priceUsdc: z.number().min(0).optional(),
+    currency: z.enum(["SOL", "USDC"]).optional(),
+    contentUrl: z.string().url().optional(),
+    coverUrl: z.string().max(12_000_000).optional(),
+    thumbnailUrl: z.string().max(12_000_000).optional(),
+    contentHash: z.string().max(128).optional(),
+    productType: z.string().max(64).optional(),
+    productInfo: z.string().max(4000).optional(),
+    status: z.enum(["draft", "published"]).optional(),
+    creatorWallet: z.string().min(32),
+    payoutWallet: z.string().min(32).optional(),
+  })
+  .refine(
+    (d) => {
+      const c = d.currency ?? "SOL";
+      if (c === "USDC") return (d.priceUsdc ?? 0) > 0;
+      return (d.priceSol ?? 0) > 0;
+    },
+    { message: "Price must be positive for the selected currency" },
+  );
+
 function parseCorsOrigins() {
   const raw = process.env.CORS_ORIGINS || "";
   return raw
@@ -185,6 +213,19 @@ export function createApp() {
     }
   });
 
+  app.get("/api/products/:id/owner/:wallet", async (req, res) => {
+    try {
+      const product = await Product.findById(req.params.id);
+      if (!product) return res.status(404).json({ message: "Not found" });
+      if (product.creatorWallet !== req.params.wallet) {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+      return res.json(product);
+    } catch {
+      return res.status(400).json({ message: "Invalid product id" });
+    }
+  });
+
   app.post("/api/products", async (req, res) => {
     try {
       const parsed = createProductSchema.parse(req.body);
@@ -222,6 +263,67 @@ export function createApp() {
     }
   });
 
+  app.put("/api/products/:id", async (req, res) => {
+    try {
+      const product = await Product.findById(req.params.id);
+      if (!product) return res.status(404).json({ message: "Not found" });
+
+      if (!req.body?.creatorWallet || req.body.creatorWallet !== product.creatorWallet) {
+        return res.status(403).json({ message: "Only product owner can edit this product" });
+      }
+
+      const merged = {
+        title: req.body.title ?? product.title,
+        description: req.body.description ?? product.description,
+        summary: req.body.summary ?? product.summary ?? "",
+        priceSol: req.body.priceSol ?? product.priceSol,
+        priceUsdc: req.body.priceUsdc ?? product.priceUsdc,
+        currency: req.body.currency ?? product.currency ?? "SOL",
+        contentUrl: req.body.contentUrl ?? product.contentUrl,
+        coverUrl: req.body.coverUrl ?? product.coverUrl ?? "",
+        thumbnailUrl: req.body.thumbnailUrl ?? product.thumbnailUrl ?? "",
+        contentHash: req.body.contentHash ?? product.contentHash ?? "",
+        productType: req.body.productType ?? product.productType ?? "digital",
+        productInfo: req.body.productInfo ?? product.productInfo ?? "",
+        status: req.body.status ?? product.status ?? "draft",
+        creatorWallet: req.body.creatorWallet,
+        payoutWallet:
+          (req.body.payoutWallet ?? product.payoutWallet) ||
+          product.creatorWallet,
+      };
+
+      const parsed = updateProductSchema.parse(merged);
+
+      if (parsed.title !== product.title) {
+        product.slug = await createUniqueSlug(parsed.title);
+      }
+
+      product.title = parsed.title;
+      product.description = parsed.description;
+      product.summary = parsed.summary ?? "";
+      product.priceSol = parsed.priceSol ?? 0;
+      product.priceUsdc = parsed.priceUsdc ?? 0;
+      product.currency = parsed.currency ?? "SOL";
+      product.contentUrl = parsed.contentUrl ?? product.contentUrl;
+      product.coverUrl = parsed.coverUrl ?? "";
+      product.thumbnailUrl = parsed.thumbnailUrl ?? parsed.coverUrl ?? "";
+      product.contentHash = parsed.contentHash ?? "";
+      product.productType = parsed.productType ?? "digital";
+      product.productInfo = parsed.productInfo ?? "";
+      product.status = parsed.status ?? product.status;
+      product.payoutWallet =
+        parsed.payoutWallet ||
+        product.payoutWallet ||
+        product.creatorWallet;
+
+      await product.save();
+      return res.json(product);
+    } catch (e) {
+      if (e instanceof z.ZodError) return res.status(400).json({ message: "Invalid payload", issues: e.issues });
+      return res.status(500).json({ message: "Failed to update product" });
+    }
+  });
+
   app.post("/api/purchases/verify", async (req, res) => {
     const { productId, buyerWallet, txSignature } = req.body;
     if (!productId || !buyerWallet || !txSignature) {
@@ -237,7 +339,12 @@ export function createApp() {
       return res.status(400).json({ message: "This product has no SOL price" });
     }
 
-    const expectedLamports = Math.round(product.priceSol * LAMPORTS_PER_SOL);
+    // Convert SOL -> lamports deterministically (client uses the same 9-decimal approach).
+    const solFixed = product.priceSol.toFixed(9);
+    const [wholePart, fracPart = ""] = solFixed.split(".");
+    const expectedLamports = BigInt(wholePart) * BigInt(LAMPORTS_PER_SOL) + BigInt(fracPart.padEnd(9, "0").slice(0, 9));
+    const feeLamports = expectedLamports / 100n; // 1% platform fee
+    const creatorLamports = expectedLamports - feeLamports;
     const payoutWallet = product.payoutWallet || product.creatorWallet;
 
     const existing = await Purchase.findOne({ txSignature });
@@ -249,7 +356,15 @@ export function createApp() {
       return res.json({ ok: true, idempotent: true });
     }
 
-    const check = await verifySolTransfer(connection, txSignature, buyerWallet, payoutWallet, expectedLamports);
+    const check = await verifySolTransfer(
+      connection,
+      txSignature,
+      buyerWallet,
+      payoutWallet,
+      RIPPLE_FEE_WALLET,
+      creatorLamports.toString(),
+      feeLamports.toString(),
+    );
     if (!check.ok) return res.status(400).json({ message: check.reason || "Verification failed" });
 
     try {
