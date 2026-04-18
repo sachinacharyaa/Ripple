@@ -186,13 +186,16 @@ a {
 }
 
 @keyframes coinFloat {
+
   0%,
   100% {
     transform: translateY(0px) rotate(-4deg);
   }
+
   33% {
     transform: translateY(-22px) rotate(2deg);
   }
+
   66% {
     transform: translateY(10px) rotate(-6deg);
   }
@@ -978,6 +981,7 @@ textarea {
 }
 
 @keyframes pulse-skel {
+
   0%,
   100% {
     opacity: 1;
@@ -1456,11 +1460,11 @@ textarea {
   color: #ffb8f0;
 }
 
-.dash-editor-toolbar + .dash-textarea {
+.dash-editor-toolbar+.dash-textarea {
   border-radius: 0 0 10px 10px;
 }
 
-.dash-editor-toolbar + .gum-textarea--editor {
+.dash-editor-toolbar+.gum-textarea--editor {
   border-top: none;
   border-radius: 0 0 8px 8px;
 }
@@ -2572,6 +2576,15 @@ textarea {
   vertical-align: middle;
 }
 
+.gum-empty {
+  padding: 24px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px dashed rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.45);
+  text-align: center;
+}
+
 .gum-table__empty {
   text-align: center;
   color: rgba(255, 255, 255, 0.45);
@@ -2870,7 +2883,7 @@ textarea {
   color: rgba(255, 255, 255, 0.35);
 }
 
-.dash-editor-toolbar + .gum-rich-editor {
+.dash-editor-toolbar+.gum-rich-editor {
   border-top: none;
   border-radius: 0 0 8px 8px;
 }
@@ -3060,19 +3073,49 @@ textarea {
   line-height: 1.5;
 }
 
-.bg-yellow { background-color: #ffc900; }
-.bg-pink { background-color: #ff90e8; }
-.bg-green { background-color: #23a094; }
-.bg-mint { background-color: #14F195; }
-.bg-lavender { background-color: #c084ff; }
-.bg-black { background-color: #12003a; }
-.bg-white { background-color: #ffffff; }
+.bg-yellow {
+  background-color: #ffc900;
+}
 
-.text-white { color: #ffffff !important; }
-.text-ink { color: var(--ink) !important; }
+.bg-pink {
+  background-color: #ff90e8;
+}
 
-.mt-16 { margin-top: 64px; }
-.mb-8 { margin-bottom: 32px; }
+.bg-green {
+  background-color: #23a094;
+}
+
+.bg-mint {
+  background-color: #14F195;
+}
+
+.bg-lavender {
+  background-color: #c084ff;
+}
+
+.bg-black {
+  background-color: #12003a;
+}
+
+.bg-white {
+  background-color: #ffffff;
+}
+
+.text-white {
+  color: #ffffff !important;
+}
+
+.text-ink {
+  color: var(--ink) !important;
+}
+
+.mt-16 {
+  margin-top: 64px;
+}
+
+.mb-8 {
+  margin-bottom: 32px;
+}
 
 .gr-timeline-card {
   border: 4px solid var(--ink);
@@ -3122,8 +3165,9 @@ textarea {
   overflow: hidden;
   position: relative;
   z-index: 10;
-  background: #0f1015; /* dark base */
-  background-image: 
+  background: #0f1015;
+  /* dark base */
+  background-image:
     radial-gradient(ellipse at 100% 100%, rgba(20, 241, 149, 0.25) 0%, transparent 60%),
     radial-gradient(ellipse at 0% 0%, rgba(88, 101, 242, 0.25) 0%, transparent 50%),
     radial-gradient(ellipse at 50% 50%, rgba(153, 69, 255, 0.12) 0%, transparent 60%);
@@ -3160,6 +3204,7 @@ textarea {
   border-color: #0d0a17;
   box-shadow: 6px 6px 0 #0d0a17;
 }
+
 .gr-btn-green:hover {
   color: #0d0a17;
   box-shadow: 10px 10px 0 #0d0a17;

@@ -80,7 +80,7 @@ export function DashboardPurchasesPage() {
       {loading ? (
         <p className="gum-muted">Loading purchases…</p>
       ) : items.length === 0 ? (
-        <div className="empty">
+        <div className="gum-empty">
           No purchases yet.{" "}
           <Link to="/dashboard/discover" className="gum-link">
             Discover products

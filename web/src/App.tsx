@@ -139,7 +139,7 @@ function Layout({
               </Link>
             </div>
           </div>
-          
+
           <div className="gr-footer-bottom gr-container">
             <div className="gr-footer-brand">
               <Link to="/" className="logo text-white" style={{ fontSize: "2.2rem" }}>Ripple.</Link>
