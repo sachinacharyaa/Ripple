@@ -1,6 +1,54 @@
 # Ripple
 
-Decentralized creator monetization on **Solana**: list digital products (metadata + gated link in MongoDB), buyers pay in **SOL** with a wallet, and the **API verifies the on-chain transfer** before unlocking the content URL.
+ - One-line pitch: Ripple is the Solana-native checkout and access layer for creators to sell digital    products and unlock them instantly with wallet-based proof of payment.                            
+  - Target user: Crypto-native creators selling high-value digital goods:                             
+      - researchers                                                                                   
+      - alpha communities                                                                             
+      - designers                                                                                     
+      - indie devs                                                                                    
+      - educators                                                                                     
+      - paid Discord/Telegram/X creators                                                              
+  - Killer differentiator: Instant wallet payment + instant wallet-based access unlock in one flow.   
+    Most products either handle payments or handle token-gating. Your wedge is doing both cleanly for 
+    digital products, with creator-controlled payouts and low fees.                                   
+  - MVP scope:                                                                                        
+      - Creator connects wallet                                                                       
+      - Creates a product with title, description, price, file/link                                   
+      - Sets payout wallet                                                                            
+      - Buyer connects wallet and pays                                                                
+      - On-chain payment is verified                                                                  
+      - Product unlocks instantly                                                                     
+      - Creator receives payout instantly                                                             
+      - Platform takes 1% fee                                                                         
+      - Support SOL first; mention USDC next only if not fully working yet                            
+  - Demo flow:                                                                                        
+      1. Creator opens Ripple and connects Phantom                                                    
+      2. Creator creates “Premium Trading Guide” or “Design Asset Pack”                               
+      3. Creator sets price and publishes                                                             
+      4. Buyer opens public product page                                                              
+      5. Buyer pays with wallet                                                                       
+      6. Transaction confirms on Solana                                                               
+      7. Backend verifies payment                                                                     
+      8. File/content unlocks instantly                                                               
+      9. Show creator payout and platform fee split                                                   
+     10. Show purchase history / proof of access                                                      
+  - Why judges would care:                                                                            
+      - It has a clear real user and monetization path                                                
+      - It uses Solana for something that actually benefits from Solana: fast, cheap, wallet-native   
+        settlement                                                                                    
+      - The demo is easy to understand in under 2 minutes                                             
+      - It is more practical than many “consumer crypto” ideas                                        
+      - It can grow beyond a hackathon into a real business                                           
+      - It has a strong extension path:                                                               
+          - USDC checkout                                                                             
+          - subscriptions
+          - NFT/token-gated perks                                                                     
+          - embedded checkout links                                                                   
+          - creator storefronts                                                                       
+                                    
+
+the fastest way for a creator to sell a digital product on Solana and unlock access instantly  
+after payment
 
 ## Repo layout
 
