@@ -39,7 +39,7 @@ export function DashboardNewProductPage() {
   const [draft, setDraft] = useState({
     name: "",
     productType: "digital",
-    currency: "SOL" as "SOL" | "USDC",
+    currency: "SOL" as "SOL" | "USDC" | "AUDD",
     priceAmount: "",
     description: "",
     productInfo: "",

@@ -3,13 +3,15 @@ import type { ProductShape } from "../types/product";
 export const CRYPTO_OPTIONS = [
   { code: "SOL" as const, label: "SOL (Solana)", symbol: "◎" },
   { code: "USDC" as const, label: "USDC", symbol: "$" },
+  { code: "AUDD" as const, label: "AUDD (Australian Digital Dollar)", symbol: "$" },
 ];
 
 export const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
 
-export function formatProductPrice(p: Pick<ProductShape, "currency" | "priceSol" | "priceUsdc">) {
+export function formatProductPrice(p: Pick<ProductShape, "currency" | "priceSol" | "priceUsdc" | "priceAudd">) {
   const c = p.currency ?? "SOL";
   if (c === "USDC") return `${(p.priceUsdc ?? 0).toFixed(2)} USDC`;
+  if (c === "AUDD") return `${(p.priceAudd ?? 0).toFixed(2)} AUDD`;
   return `${(p.priceSol ?? 0).toFixed(2)} SOL`;
 }
 

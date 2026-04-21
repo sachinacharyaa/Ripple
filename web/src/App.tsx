@@ -189,11 +189,10 @@ function Home() {
             animate={{ opacity: 1, y: 0 }}
             className="hero-title"
           >
-            Go from 0 to 1$OL
+            Make from 0 to first dollar online
           </motion.h1>
           <p className="hero-sub">
-            Ripple lets anyone sell digital content, accept instant crypto
-            payments, and unlock access with a wallet.
+            Earn from anywhere. Sell anything. Get paid instantly.
           </p>
           <div className="hero-actions">
             <Link to="/dashboard/home" className="btn btn-primary">
@@ -514,6 +513,13 @@ function ProductPage() {
       return;
     }
 
+    if (product.currency === "AUDD") {
+      setError(
+        "This listing is priced in AUDD. On-chain checkout for AUDD is not enabled yet — ask the creator for a SOL-priced version.",
+      );
+      return;
+    }
+
     setBusy(true);
     try {
       const buyerWallet = publicKey.toBase58();
@@ -631,7 +637,7 @@ function ProductPage() {
               {!contentLink && (
                 <button
                   className="btn btn-primary"
-                  disabled={busy || product.currency === "USDC"}
+                  disabled={busy || product.currency === "USDC" || product.currency === "AUDD"}
                   onClick={buy}
                   type="button"
                 >
@@ -639,7 +645,9 @@ function ProductPage() {
                     ? "Processing..."
                     : product.currency === "USDC"
                       ? "USDC soon"
-                      : "Buy now"}
+                      : product.currency === "AUDD"
+                        ? "AUDD soon"
+                        : "Buy now"}
                 </button>
               )}
             </div>

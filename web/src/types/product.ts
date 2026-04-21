@@ -9,7 +9,8 @@ export type ProductShape = {
   status?: "draft" | "published";
   priceSol: number;
   priceUsdc?: number;
-  currency?: "SOL" | "USDC";
+  priceAudd?: number;
+  currency?: "SOL" | "USDC" | "AUDD";
   contentUrl: string;
   coverUrl?: string;
   thumbnailUrl?: string;

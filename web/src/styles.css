@@ -360,7 +360,7 @@ a {
 
 .hero-title {
   font-family: var(--font-sans);
-  font-size: clamp(2.2rem, 5.5vw, 4.2rem);
+  font-size: clamp(1.2rem, 4.5vw, 2.8rem);
   font-weight: 900;
   line-height: 1.05;
   color: var(--ink);
