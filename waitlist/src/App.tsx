@@ -1,6 +1,7 @@
 import { useState, FormEvent, useEffect } from "react";
 import confetti from "canvas-confetti";
 import { X, Loader2, CheckCircle2 } from "lucide-react";
+import { Analytics } from "@vercel/analytics/react";
 
 export default function App() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -36,6 +37,40 @@ export default function App() {
     frame();
   };
 
+  const playSuccessSound = () => {
+    try {
+      const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      
+      const playNote = (frequency: number, startTime: number, duration: number) => {
+        const oscillator = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+        
+        oscillator.type = 'sine';
+        oscillator.frequency.value = frequency;
+        
+        gainNode.gain.setValueAtTime(0, startTime);
+        gainNode.gain.linearRampToValueAtTime(0.2, startTime + 0.05);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + duration);
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+        
+        oscillator.start(startTime);
+        oscillator.stop(startTime + duration);
+      };
+
+      const now = audioCtx.currentTime;
+      // C Major arpeggio chime
+      playNote(523.25, now, 0.2);       // C5
+      playNote(659.25, now + 0.1, 0.3); // E5
+      playNote(783.99, now + 0.2, 0.5); // G5
+      playNote(1046.50, now + 0.3, 0.8);// C6
+      
+    } catch (e) {
+      console.log('Audio not supported', e);
+    }
+  };
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!name || !email) return;
@@ -60,6 +95,7 @@ export default function App() {
 
       setStatus("success");
       triggerConfetti();
+      playSuccessSound();
 
       // Close modal after some time
       setTimeout(() => {
@@ -97,15 +133,15 @@ export default function App() {
 
       <div className="z-10 flex flex-col items-center text-center px-6 max-w-3xl mx-auto w-full">
         {/* Logo */}
-        <div className="w-24 h-24 rounded-3xl overflow-hidden flex items-center justify-center mb-10 shadow-2xl border border-white/10">
-          <img src="/logoRipple.png" alt="Ripple Logo" className="w-full h-full object-cover" />
+        <div className="rounded-3xl overflow-hidden flex items-center justify-center mb-10 shadow-2xl border border-white/10 shrink-0" style={{ width: '96px', height: '96px' }}>
+          <img src="/logoRipple.png" alt="Ripple Logo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
         </div>
 
         {/* Hero Text */}
         <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-6 bg-clip-text text-transparent bg-gradient-to-b from-white to-white/70">
           Join the waitlist
         </h1>
-        <p className="text-lg md:text-xl text-zinc-400 mb-12 max-w-full mx-auto leading-relaxed whitespace-nowrap overflow-hidden text-ellipsis">
+        <p className="text-lg md:text-xl text-zinc-400 mb-12 max-w-3xl mx-auto leading-relaxed">
           Get early access to Ripple and explore the Solana creator marketplace.
         </p>
 
@@ -212,6 +248,7 @@ export default function App() {
           </div>
         </div>
       )}
+      <Analytics />
     </main>
   );
 }
