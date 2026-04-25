@@ -205,7 +205,7 @@ function Home() {
         </div>
       </section>
 
-      <section className="gr-section bg-yellow" id="features">
+      {/* <section className="gr-section bg-yellow" id="features">
         <div className="gr-container">
           <div className="gr-tag bg-pink">Vision</div>
           <h2 className="gr-title-huge">A creator-first<br />Solana marketplace.</h2>
@@ -346,7 +346,7 @@ function Home() {
             </div>
           </div>
         </div>
-      </section>
+      </section> */}
 
     </Layout>
   );

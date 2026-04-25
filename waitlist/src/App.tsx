@@ -60,7 +60,7 @@ export default function App() {
 
       setStatus("success");
       triggerConfetti();
-      
+
       // Close modal after some time
       setTimeout(() => {
         setIsModalOpen(false);
@@ -105,12 +105,12 @@ export default function App() {
         <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-6 bg-clip-text text-transparent bg-gradient-to-b from-white to-white/70">
           Join the waitlist
         </h1>
-        <p className="text-lg md:text-xl text-zinc-400 mb-12 max-w-lg mx-auto leading-relaxed">
-          Get early access to Ripple and start earning instantly.
+        <p className="text-lg md:text-xl text-zinc-400 mb-12 max-w-full mx-auto leading-relaxed whitespace-nowrap overflow-hidden text-ellipsis">
+          Get early access to Ripple and explore the Solana creator marketplace.
         </p>
 
         {/* Form Trigger (Looks like an input, acts as a button to open modal) */}
-        <div 
+        <div
           onClick={() => setIsModalOpen(true)}
           className="flex flex-col sm:flex-row items-center gap-3 w-full max-w-md bg-zinc-900/50 backdrop-blur-md p-2 rounded-2xl border border-zinc-800 hover:border-zinc-700 transition-all cursor-pointer group"
         >
@@ -128,16 +128,16 @@ export default function App() {
       {/* Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
-          <div 
+          <div
             className="absolute inset-0 bg-black/60 backdrop-blur-sm"
             onClick={() => status !== 'loading' && setIsModalOpen(false)}
           ></div>
-          
+
           <div className="relative w-full max-w-md bg-zinc-950 border border-zinc-800 p-8 rounded-3xl shadow-2xl modal-animate overflow-hidden">
             {/* Modal glow */}
             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-1/2 bg-[#14f195] opacity-5 blur-[100px] pointer-events-none"></div>
 
-            <button 
+            <button
               onClick={() => setIsModalOpen(false)}
               className="absolute top-4 right-4 p-2 text-zinc-500 hover:text-white transition-colors rounded-full hover:bg-zinc-900"
               disabled={status === "loading"}

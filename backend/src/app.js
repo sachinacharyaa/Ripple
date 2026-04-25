@@ -31,7 +31,8 @@ const productSchema = new mongoose.Schema(
     summary: { type: String, default: "" },
     priceSol: { type: Number, default: 0 },
     priceUsdc: { type: Number, default: 0 },
-    currency: { type: String, enum: ["SOL", "USDC"], default: "SOL" },
+    priceAudd: { type: Number, default: 0 },
+    currency: { type: String, enum: ["SOL", "USDC", "AUDD"], default: "SOL" },
     contentUrl: { type: String, required: true },
     coverUrl: { type: String, default: "" },
     thumbnailUrl: { type: String, default: "" },
@@ -86,7 +87,8 @@ const createProductSchema = z
     summary: z.string().max(2000).optional(),
     priceSol: z.number().min(0),
     priceUsdc: z.number().min(0),
-    currency: z.enum(["SOL", "USDC"]).optional(),
+    priceAudd: z.number().min(0),
+    currency: z.enum(["SOL", "USDC", "AUDD"]).optional(),
     contentUrl: z.string().url(),
     coverUrl: z.string().max(12_000_000).optional(),
     thumbnailUrl: z.string().max(12_000_000).optional(),
@@ -101,6 +103,7 @@ const createProductSchema = z
     (d) => {
       const c = d.currency ?? "SOL";
       if (c === "USDC") return d.priceUsdc > 0;
+      if (c === "AUDD") return d.priceAudd > 0;
       return d.priceSol > 0;
     },
     { message: "Price must be positive for the selected currency" },
@@ -113,7 +116,8 @@ const updateProductSchema = z
     summary: z.string().max(2000).optional(),
     priceSol: z.number().min(0).optional(),
     priceUsdc: z.number().min(0).optional(),
-    currency: z.enum(["SOL", "USDC"]).optional(),
+    priceAudd: z.number().min(0).optional(),
+    currency: z.enum(["SOL", "USDC", "AUDD"]).optional(),
     contentUrl: z.string().url().optional(),
     coverUrl: z.string().max(12_000_000).optional(),
     thumbnailUrl: z.string().max(12_000_000).optional(),
@@ -128,6 +132,7 @@ const updateProductSchema = z
     (d) => {
       const c = d.currency ?? "SOL";
       if (c === "USDC") return (d.priceUsdc ?? 0) > 0;
+      if (c === "AUDD") return (d.priceAudd ?? 0) > 0;
       return (d.priceSol ?? 0) > 0;
     },
     { message: "Price must be positive for the selected currency" },
@@ -278,6 +283,7 @@ export function createApp() {
         summary: req.body.summary ?? product.summary ?? "",
         priceSol: req.body.priceSol ?? product.priceSol,
         priceUsdc: req.body.priceUsdc ?? product.priceUsdc,
+        priceAudd: req.body.priceAudd ?? product.priceAudd,
         currency: req.body.currency ?? product.currency ?? "SOL",
         contentUrl: req.body.contentUrl ?? product.contentUrl,
         coverUrl: req.body.coverUrl ?? product.coverUrl ?? "",
@@ -303,6 +309,7 @@ export function createApp() {
       product.summary = parsed.summary ?? "";
       product.priceSol = parsed.priceSol ?? 0;
       product.priceUsdc = parsed.priceUsdc ?? 0;
+      product.priceAudd = parsed.priceAudd ?? 0;
       product.currency = parsed.currency ?? "SOL";
       product.contentUrl = parsed.contentUrl ?? product.contentUrl;
       product.coverUrl = parsed.coverUrl ?? "";
