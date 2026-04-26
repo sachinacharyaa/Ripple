@@ -11,11 +11,13 @@ app.use(cors());
 app.use(express.json());
 
 // Connect to MongoDB
-dbConnect();
+const dbReadyPromise = dbConnect();
 
 // API Routes
 app.post('/api/waitlist', async (req, res) => {
   try {
+    await dbReadyPromise;
+
     const { name, email } = req.body;
 
     if (!name || !email) {

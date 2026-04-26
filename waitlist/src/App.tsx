@@ -1,7 +1,7 @@
 import { useState, FormEvent, useEffect } from "react";
 import confetti from "canvas-confetti";
 import { X, Loader2, CheckCircle2 } from "lucide-react";
-import { Analytics } from "@vercel/analytics/next";
+import { Analytics } from "@vercel/analytics/react";
 
 export default function App() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -86,11 +86,18 @@ export default function App() {
         },
         body: JSON.stringify({ name, email }),
       });
-
-      const data = await res.json();
+      const contentType = res.headers.get("content-type") || "";
+      const isJson = contentType.includes("application/json");
+      const payload = isJson ? await res.json() : await res.text();
 
       if (!res.ok) {
-        throw new Error(data.message || "Something went wrong");
+        const message =
+          isJson && payload && typeof payload === "object" && "message" in payload
+            ? String((payload as { message?: string }).message || "Something went wrong")
+            : typeof payload === "string" && payload.trim().length > 0
+              ? payload
+              : "Something went wrong";
+        throw new Error(message);
       }
 
       setStatus("success");
