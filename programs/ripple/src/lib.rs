@@ -1,4 +1,4 @@
-//! Minimal Anchor program for Ripple: buyer signs a `purchase` that transfers SOL to a creator.
+//! Minimal Anchor program for Rivo: buyer signs a `purchase` that transfers SOL to a creator.
 //! The web app MVP verifies native `SystemProgram::transfer` instructions; this program is the
 //! on-chain core you can route through after `anchor build` + `anchor deploy`.
 //!
@@ -9,7 +9,7 @@ use anchor_lang::prelude::*;
 declare_id!("EaEq7oukxo1VA75P5zr8jCVZjNesF7ZavWy2A9QKAqTp");
 
 #[program]
-pub mod ripple {
+pub mod Rivo {
     use super::*;
 
     /// Transfers `amount` lamports from buyer (signer) to creator.

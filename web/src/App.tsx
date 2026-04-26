@@ -14,7 +14,7 @@ import { api } from "./lib/api";
 import axios from "axios";
 import {
   handlePayment,
-  RIPPLE_FEE_WALLET,
+  Rivo_FEE_WALLET,
 } from "./lib/payment";
 import { formatProductPrice, productPublicPath } from "./lib/productUtils";
 import { FormatProductDescription } from "./lib/richDescription";
@@ -92,7 +92,7 @@ function Layout({
       <header className="site-header" id="top">
         <div className="header-left">
           <Link to="/" className="logo">
-            Ripple
+            Rivo
           </Link>
           <span className="badge">Solana native</span>
         </div>
@@ -142,7 +142,7 @@ function Layout({
 
           <div className="gr-footer-bottom gr-container">
             <div className="gr-footer-brand">
-              <Link to="/" className="logo text-white" style={{ fontSize: "2.2rem" }}>Ripple.</Link>
+              <Link to="/" className="logo text-white" style={{ fontSize: "2.2rem" }}>Rivo.</Link>
               <span className="gr-footer-desc">The Web3 creator monetization layer.</span>
             </div>
             <div className="gr-footer-links">
@@ -210,7 +210,7 @@ function Home() {
           <div className="gr-tag bg-pink">Vision</div>
           <h2 className="gr-title-huge">A creator-first<br />Solana marketplace.</h2>
           <p className="gr-subtitle">
-            Ripple removes platform lock-in so creators can sell anything,
+            Rivo removes platform lock-in so creators can sell anything,
             anywhere, and get paid instantly with crypto.
           </p>
           <div className="gr-grid-3 mt-16">
@@ -380,7 +380,7 @@ function ProductsPage() {
         <div className="section-head">
           <div>
             <div className="section-kicker">Live</div>
-            <h2 className="section-title">Products on Ripple</h2>
+            <h2 className="section-title">Products on Rivo</h2>
             <p className="section-sub">Only published products show up here.</p>
           </div>
           <div className="search-bar" aria-label="Search products">
@@ -531,7 +531,7 @@ function ProductPage() {
         wallet: { publicKey, sendTransaction },
         productPriceSol: product.priceSol,
         creatorAddress,
-        platformAddress: RIPPLE_FEE_WALLET,
+        platformAddress: Rivo_FEE_WALLET,
       });
       setTxSignature(signature);
 

@@ -15,7 +15,7 @@ export function DashboardShell() {
     <div className="gum-dashboard">
       <header className="gum-topbar">
         <Link to="/" className="gum-topbar__brand">
-          Ripple
+          Rivo
         </Link>
         <div className="gum-topbar__right">
           <WalletMultiButton className="gum-wallet-btn gum-wallet-btn--compact" />

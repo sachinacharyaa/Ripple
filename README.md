@@ -1,6 +1,6 @@
-# Ripple
+# Rivo
 
- - One-line pitch: Ripple is the Solana-native checkout and access layer for creators to sell digital    products and unlock them instantly with wallet-based proof of payment.                            
+ - One-line pitch: Rivo is the Solana-native checkout and access layer for creators to sell digital    products and unlock them instantly with wallet-based proof of payment.                            
   - Target user: Crypto-native creators selling high-value digital goods:                             
       - researchers                                                                                   
       - alpha communities                                                                             
@@ -22,7 +22,7 @@
       - Platform takes 1% fee                                                                         
       - Support SOL first; mention USDC next only if not fully working yet                            
   - Demo flow:                                                                                        
-      1. Creator opens Ripple and connects Phantom                                                    
+      1. Creator opens Rivo and connects Phantom                                                    
       2. Creator creates “Premium Trading Guide” or “Design Asset Pack”                               
       3. Creator sets price and publishes                                                             
       4. Buyer opens public product page                                                              
@@ -60,7 +60,7 @@ after payment
 | `web/src/lib/` | Shared `api` client + product helpers |
 | `web/src/types/product.ts` | `ProductShape` type |
 | `backend/` | Express + Mongoose (product metadata, purchases, access) |
-| `programs/ripple/` | **Anchor** program with a minimal `purchase` instruction (deploy when you want payments routed through the program) |
+| `programs/Rivo/` | **Anchor** program with a minimal `purchase` instruction (deploy when you want payments routed through the program) |
 
 ## Prerequisites
 

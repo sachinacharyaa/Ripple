@@ -134,7 +134,7 @@ export default function App() {
       <div className="z-10 flex flex-col items-center text-center px-6 max-w-3xl mx-auto w-full">
         {/* Logo */}
         <div className="rounded-3xl overflow-hidden flex items-center justify-center mb-10 shadow-2xl border border-white/10 shrink-0" style={{ width: '96px', height: '96px' }}>
-          <img src="/logoRipple.png" alt="Ripple Logo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          <img src="/logoRivo.png" alt="Rivo Logo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
         </div>
 
         {/* Hero Text */}
@@ -142,7 +142,7 @@ export default function App() {
           Join the waitlist
         </h1>
         <p className="text-lg md:text-xl text-zinc-400 mb-12 max-w-3xl mx-auto leading-relaxed">
-          Get early access to Ripple and explore the Solana creator marketplace.
+          Get early access to Rivo and explore the Solana creator marketplace.
         </p>
 
         {/* Form Trigger (Looks like an input, acts as a button to open modal) */}
@@ -192,7 +192,7 @@ export default function App() {
             ) : (
               <>
                 <div className="mb-8">
-                  <h3 className="text-2xl font-bold mb-2">Join Ripple</h3>
+                  <h3 className="text-2xl font-bold mb-2">Join Rivo</h3>
                   <p className="text-zinc-400 text-sm">Enter your details to secure your spot.</p>
                 </div>
 

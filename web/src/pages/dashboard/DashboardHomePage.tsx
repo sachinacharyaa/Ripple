@@ -44,9 +44,9 @@ export function DashboardHomePage() {
 
   const totalSales = useMemo(() => products.reduce((s, p) => s + p.salesCount, 0), [products]);
 
-  const profileDone = typeof localStorage !== "undefined" && localStorage.getItem("ripple_gs_profile") === "1";
-  const payoutDone = typeof localStorage !== "undefined" && localStorage.getItem("ripple_gs_payout") === "1";
-  const shareDone = typeof localStorage !== "undefined" && localStorage.getItem("ripple_gs_share") === "1";
+  const profileDone = typeof localStorage !== "undefined" && localStorage.getItem("Rivo_gs_profile") === "1";
+  const payoutDone = typeof localStorage !== "undefined" && localStorage.getItem("Rivo_gs_payout") === "1";
+  const shareDone = typeof localStorage !== "undefined" && localStorage.getItem("Rivo_gs_share") === "1";
 
   const gs = {
     welcome: !!wallet,
@@ -60,7 +60,7 @@ export function DashboardHomePage() {
   };
 
   const cards = [
-    { title: "Welcome aboard", desc: "Connect your Solana wallet to Ripple.", done: gs.welcome, icon: "✌" },
+    { title: "Welcome aboard", desc: "Connect your Solana wallet to Rivo.", done: gs.welcome, icon: "✌" },
     { title: "Make an impression", desc: "Customize your creator profile (coming soon).", done: gs.profile, icon: "🖌" },
     { title: "Showtime", desc: "Create your first product.", done: gs.product, icon: "🚀" },
     { title: "Build your tribe", desc: "Get your first follower on-chain.", done: gs.follower, icon: "⚡" },

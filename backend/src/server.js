@@ -8,7 +8,7 @@ export default app;
 
 async function startServer() {
   await ensureDbConnected();
-  app.listen(port, () => console.log(`Ripple API running on :${port}`));
+  app.listen(port, () => console.log(`Rivo API running on :${port}`));
 }
 
 if (process.env.VERCEL !== "1") {

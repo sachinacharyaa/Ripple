@@ -1,12 +1,12 @@
 [package]
-name = "ripple"
+name = "Rivo"
 version = "0.1.0"
-description = "Ripple — minimal on-chain purchase rail for creator payments (MVP)"
+description = "Rivo — minimal on-chain purchase rail for creator payments (MVP)"
 edition = "2021"
 
 [lib]
 crate-type = ["cdylib", "lib"]
-name = "ripple"
+name = "Rivo"
 
 [features]
 default = []

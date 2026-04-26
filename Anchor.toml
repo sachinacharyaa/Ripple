@@ -6,10 +6,10 @@ resolution = true
 skip-lint = false
 
 [programs.devnet]
-ripple = "EaEq7oukxo1VA75P5zr8jCVZjNesF7ZavWy2A9QKAqTp"
+Rivo = "EaEq7oukxo1VA75P5zr8jCVZjNesF7ZavWy2A9QKAqTp"
 
 [programs.localnet]
-ripple = "EaEq7oukxo1VA75P5zr8jCVZjNesF7ZavWy2A9QKAqTp"
+Rivo = "EaEq7oukxo1VA75P5zr8jCVZjNesF7ZavWy2A9QKAqTp"
 
 [registry]
 url = "https://api.apr.dev"

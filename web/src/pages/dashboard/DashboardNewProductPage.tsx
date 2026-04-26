@@ -59,7 +59,7 @@ export function DashboardNewProductPage() {
 
   useEffect(() => {
     if (typeof localStorage === "undefined") return;
-    const saved = localStorage.getItem("ripple_payout_wallet");
+    const saved = localStorage.getItem("Rivo_payout_wallet");
     if (saved) setPayoutWallet(saved);
   }, []);
 
@@ -110,7 +110,7 @@ export function DashboardNewProductPage() {
       const published = await api.post<ProductShape>(`/products/${data._id}/publish`);
       setCreatedProduct(published.data);
       if (typeof localStorage !== "undefined") {
-        localStorage.setItem("ripple_gs_share", "1");
+        localStorage.setItem("Rivo_gs_share", "1");
       }
       setStep(3);
     } catch (err) {
@@ -299,7 +299,7 @@ export function DashboardNewProductPage() {
               Need help adding a product? Use a clear title, pick the closest type, and price in SOL or USDC (USDC is display-only until
               SPL checkout lands).
             </p>
-            <a href="https://github.com/sachinacharyaa/Ripple" className="gum-link" target="_blank" rel="noreferrer">
+            <a href="https://github.com/sachinacharyaa/Rivo" className="gum-link" target="_blank" rel="noreferrer">
               View docs
             </a>
           </aside>

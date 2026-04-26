@@ -63,7 +63,7 @@ export function DashboardPaymentPage() {
     try {
       await api.post(`/creators/${wallet}/payout`, { payoutWallet });
       if (typeof localStorage !== "undefined") {
-        localStorage.setItem("ripple_payout_wallet", payoutWallet);
+        localStorage.setItem("Rivo_payout_wallet", payoutWallet);
       }
       setSavedWallet(payoutWallet);
       setNotice("Payout wallet saved.");
@@ -93,7 +93,7 @@ export function DashboardPaymentPage() {
           <h1 className="gum-page__h1">Payments</h1>
           <p className="gum-page__lead">
             Choose where your SOL sales are paid out. Buyers will pay the saved
-            payout wallet, plus a 1% Ripple fee.
+            payout wallet, plus a 1% Rivo fee.
           </p>
         </div>
       </div>

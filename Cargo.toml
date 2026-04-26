@@ -1,5 +1,5 @@
 [workspace]
-members = ["programs/ripple"]
+members = ["programs/Rivo"]
 resolver = "2"
 
 [profile.release]
