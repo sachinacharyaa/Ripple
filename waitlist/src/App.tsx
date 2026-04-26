@@ -1,7 +1,7 @@
 import { useState, FormEvent, useEffect } from "react";
 import confetti from "canvas-confetti";
 import { X, Loader2, CheckCircle2 } from "lucide-react";
-import { Analytics } from "@vercel/analytics/react";
+import { Analytics } from "@vercel/analytics/next";
 
 export default function App() {
   const [isModalOpen, setIsModalOpen] = useState(false);
