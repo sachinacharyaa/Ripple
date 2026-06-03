@@ -5,6 +5,7 @@
 const HIDDEN_TITLES = new Set(
   [
     "pinte",
+    "test",
     "test0",
     "hero1",
     "faizer",
