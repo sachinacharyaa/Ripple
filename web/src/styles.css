@@ -3502,6 +3502,107 @@ textarea {
 }
 
 /* ==========================================================
+   FAQ SECTION
+   ========================================================== */
+.faq-section {
+  background: var(--cream);
+  scroll-margin-top: 80px;
+}
+
+.faq-container {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  gap: 56px;
+  align-items: start;
+}
+
+.faq-head {
+  position: sticky;
+  top: 96px;
+}
+
+.faq-title {
+  margin-top: 20px;
+  font-size: clamp(2rem, 4vw, 3.25rem);
+}
+
+.faq-subtitle {
+  margin-bottom: 0;
+  font-size: clamp(1rem, 2vw, 1.25rem);
+}
+
+.faq-list {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.faq-item {
+  background: var(--white);
+  border: 4px solid var(--ink);
+  border-radius: 18px;
+  box-shadow: 6px 6px 0 var(--ink);
+  overflow: hidden;
+  transition: box-shadow 0.2s, transform 0.2s;
+}
+
+.faq-item--open {
+  box-shadow: 8px 8px 0 var(--sol-green);
+}
+
+.faq-question {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 22px 24px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  font-family: var(--font-sans);
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--ink);
+}
+
+.faq-icon {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--ink);
+  border-radius: 50%;
+  font-size: 1.4rem;
+  font-weight: 800;
+  line-height: 1;
+  background: var(--sol-green);
+  color: #0d0a17;
+}
+
+.faq-answer {
+  margin: 0;
+  padding: 0 24px 24px;
+  font-size: 1rem;
+  line-height: 1.6;
+  color: var(--muted);
+}
+
+@media (max-width: 860px) {
+  .faq-container {
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
+
+  .faq-head {
+    position: static;
+  }
+}
+
+/* ==========================================================
    GUMROAD STYLE FOOTER (SOLANA DARK VIBE)
    ========================================================== */
 .gr-footer {

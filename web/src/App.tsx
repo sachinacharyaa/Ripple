@@ -186,6 +186,7 @@ function Layout({
               <Link to="/dashboard/discover">Discover</Link>
               <a href="/#features">Features</a>
               <a href="/#creators">Creators</a>
+              <a href="/#faq">FAQ</a>
               <Link to="/dashboard/products">Products</Link>
             </>
           ) : (
@@ -286,7 +287,77 @@ function Home() {
         </div>
       </section>
 
+      <FaqSection />
     </Layout>
+  );
+}
+
+const FAQ_ITEMS = [
+  {
+    q: "What is Rivo?",
+    a: "Rivo is a decentralized creator monetization platform built on Solana. Sell digital products, courses, e-books, memberships, and more — and get paid instantly in crypto, directly to your wallet.",
+  },
+  {
+    q: "Do I need a crypto wallet to get started?",
+    a: "Yes. Connect any Solana wallet (like Phantom or Solflare) to start selling or buying. Your wallet is your account — there are no passwords or sign-ups.",
+  },
+  {
+    q: "Which currencies can I accept?",
+    a: "You can price and sell products in SOL or supported SPL tokens such as USDC and PUSD. Buyers pay in the listing currency and funds settle straight to your wallet.",
+  },
+  {
+    q: "How much does Rivo charge?",
+    a: "Rivo takes a small 3% platform fee on each sale. The remaining 97% goes directly to you at checkout — no payouts to wait for.",
+  },
+  {
+    q: "How do buyers receive what they purchase?",
+    a: "Product files are stored on IPFS and unlocked automatically for buyers once payment is confirmed on-chain. Buyers can access their purchases anytime from their dashboard.",
+  },
+  {
+    q: "Is Rivo live on mainnet?",
+    a: "Rivo is currently running on Solana devnet while we finish testing. Mainnet support is on the way — follow us on X and Discord for launch updates.",
+  },
+];
+
+function FaqSection() {
+  const [openIndex, setOpenIndex] = useState<number | null>(0);
+
+  return (
+    <section className="gr-section faq-section" id="faq">
+      <div className="gr-container faq-container">
+        <div className="faq-head">
+          <span className="gr-tag">FAQ</span>
+          <h2 className="gr-title-huge faq-title">Questions? Answered.</h2>
+          <p className="gr-subtitle faq-subtitle">
+            Everything you need to know about earning on Rivo.
+          </p>
+        </div>
+        <div className="faq-list">
+          {FAQ_ITEMS.map((item, index) => {
+            const isOpen = openIndex === index;
+            return (
+              <div
+                key={item.q}
+                className={`faq-item${isOpen ? " faq-item--open" : ""}`}
+              >
+                <button
+                  type="button"
+                  className="faq-question"
+                  aria-expanded={isOpen}
+                  onClick={() => setOpenIndex(isOpen ? null : index)}
+                >
+                  <span>{item.q}</span>
+                  <span className="faq-icon" aria-hidden="true">
+                    {isOpen ? "–" : "+"}
+                  </span>
+                </button>
+                {isOpen && <p className="faq-answer">{item.a}</p>}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </section>
   );
 }
 
