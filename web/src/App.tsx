@@ -186,7 +186,7 @@ function Layout({
               <Link to="/dashboard/discover">Discover</Link>
               <a href="/#features">Features</a>
               <a href="/#creators">Creators</a>
-              <a href="/#faq">FAQ</a>
+              <Link to="/faq">FAQ</Link>
               <Link to="/dashboard/products">Products</Link>
             </>
           ) : (
@@ -287,6 +287,13 @@ function Home() {
         </div>
       </section>
 
+    </Layout>
+  );
+}
+
+function FaqPage() {
+  return (
+    <Layout>
       <FaqSection />
     </Layout>
   );
@@ -837,6 +844,7 @@ export function App() {
       <RouteAnalyticsTracker />
       <Routes>
         <Route path="/" element={<Home />} />
+        <Route path="/faq" element={<FaqPage />} />
         <Route path="/products" element={<ProductsPage />} />
         <Route path="/dashboard" element={<DashboardShell />}>
           <Route index element={<Navigate to="home" replace />} />
