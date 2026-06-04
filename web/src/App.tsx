@@ -164,9 +164,11 @@ function FooterEmailSignup() {
 function Layout({
   children,
   variant = "default",
+  hideFooterCta = false,
 }: {
   children: ReactNode;
   variant?: "default" | "dashboard";
+  hideFooterCta?: boolean;
 }) {
   const location = useLocation();
   const isHome = location.pathname === "/";
@@ -213,17 +215,19 @@ function Layout({
       </main>
       {variant !== "dashboard" && (
         <footer className="gr-footer">
-          <div className="gr-footer-cta">
-            <div className="gr-container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-              <h2 className="gr-title-huge" style={{ textAlign: "center", marginBottom: "24px" }}>Ready to earn?</h2>
-              <p className="gr-subtitle" style={{ textAlign: "center", margin: "0 auto 40px", maxWidth: "600px" }}>
-                A tasteful & useful crypto app built for creators. Connect your wallet and instantly monetize your content seamlessly on Solana.
-              </p>
-              <Link to="/dashboard/home" className="gr-btn gr-btn-green">
-                Start selling now
-              </Link>
+          {!hideFooterCta && (
+            <div className="gr-footer-cta">
+              <div className="gr-container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <h2 className="gr-title-huge" style={{ textAlign: "center", marginBottom: "24px" }}>Ready to earn?</h2>
+                <p className="gr-subtitle" style={{ textAlign: "center", margin: "0 auto 40px", maxWidth: "600px" }}>
+                  A tasteful & useful crypto app built for creators. Connect your wallet and instantly monetize your content seamlessly on Solana.
+                </p>
+                <Link to="/dashboard/home" className="gr-btn gr-btn-green">
+                  Start selling now
+                </Link>
+              </div>
             </div>
-          </div>
+          )}
 
           <div className="gr-footer-bottom gr-container">
             <div className="gr-footer-brand">
@@ -293,7 +297,7 @@ function Home() {
 
 function FaqPage() {
   return (
-    <Layout>
+    <Layout hideFooterCta>
       <FaqSection />
     </Layout>
   );
