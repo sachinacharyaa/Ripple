@@ -305,28 +305,24 @@ function FaqPage() {
 
 const FAQ_ITEMS = [
   {
-    q: "What is Rivo?",
-    a: "Rivo is a decentralized creator monetization platform built on Solana. Sell digital products, courses, e-books, memberships, and more — and get paid instantly in crypto, directly to your wallet.",
+    q: "What types of digital products can be sold on Rivo?",
+    a: "Rivo is designed for creators, developers and builders who want to monetize digital value. Currently, any file-based digital asset can be sold on the platform including E-books, developer assets/templates, toolkits and downloadable content.",
   },
   {
-    q: "Do I need a crypto wallet to get started?",
-    a: "Yes. Connect any Solana wallet (like Phantom or Solflare) to start selling or buying. Your wallet is your account — there are no passwords or sign-ups.",
+    q: "How is Rivo different from other marketplaces?",
+    a: "Many creator platforms charge high fees, delay payouts and rely on payment infrastructure that is unavailable in certain regions. Rivo uses Solana to provide low-fee, instant settlement and global access which enabling creators to sell digital products seamlessly without traditional payment barriers.",
   },
   {
-    q: "Which currencies can I accept?",
-    a: "You can price and sell products in SOL or supported SPL tokens such as USDC and PUSD. Buyers pay in the listing currency and funds settle straight to your wallet.",
+    q: "What fees does Rivo charge?",
+    a: "Rivo charges a simple 3% platform fee on successful sales. In return, creators receive instant payouts, buyers gain immediate access to purchased content and transactions are processed through a seamless wallet-native checkout experience.",
   },
   {
-    q: "How much does Rivo charge?",
-    a: "Rivo takes a small 3% platform fee on each sale. The remaining 97% goes directly to you at checkout — no payouts to wait for.",
+    q: "Is Rivo currently on Mainnet or Devnet?",
+    a: "Rivo is currently live on Devnet, where we are actively testing the platform with early creators and buyers. This allows us to refine the user experience, payment flows and marketplace infrastructure before launching on Mainnet.",
   },
   {
-    q: "How do buyers receive what they purchase?",
-    a: "Product files are stored on IPFS and unlocked automatically for buyers once payment is confirmed on-chain. Buyers can access their purchases anytime from their dashboard.",
-  },
-  {
-    q: "Is Rivo live on mainnet?",
-    a: "Rivo is currently running on Solana devnet while we finish testing. Mainnet support is on the way — follow us on X and Discord for launch updates.",
+    q: "What payment options are available?",
+    a: "Rivo currently supports SOL payments and includes support for USDC within the marketplace. We are working to expand stablecoin support and integrate additional payment options ahead of our Mainnet launch.",
   },
 ];
 

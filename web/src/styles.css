@@ -3547,7 +3547,7 @@ textarea {
 }
 
 .faq-item--open {
-  box-shadow: 8px 8px 0 var(--sol-green);
+  box-shadow: 6px 6px 0 var(--ink);
 }
 
 .faq-question {
@@ -3579,8 +3579,8 @@ textarea {
   font-size: 1.4rem;
   font-weight: 800;
   line-height: 1;
-  background: var(--sol-green);
-  color: #0d0a17;
+  background: var(--white);
+  color: var(--ink);
 }
 
 .faq-answer {
