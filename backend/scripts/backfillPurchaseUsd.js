@@ -40,12 +40,13 @@ const Purchase = mongoose.model(
 const priceByDate = new Map(); // "DD-MM-YYYY" -> number | null
 let currentRateCache = null;
 
+function isoDate(date) {
+  return new Date(date).toISOString().slice(0, 10); // YYYY-MM-DD (UTC)
+}
+
 function ddmmyyyy(date) {
   const d = new Date(date);
-  const dd = String(d.getUTCDate()).padStart(2, "0");
-  const mm = String(d.getUTCMonth() + 1).padStart(2, "0");
-  const yyyy = d.getUTCFullYear();
-  return `${dd}-${mm}-${yyyy}`;
+  return `${String(d.getUTCDate()).padStart(2, "0")}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-${d.getUTCFullYear()}`;
 }
 
 async function fetchJson(url) {
@@ -54,24 +55,54 @@ async function fetchJson(url) {
   return res.json();
 }
 
+/** Daily SOL/USD for a date, trying several providers so one outage doesn't block the backfill. */
 async function getHistoricalSolUsd(date) {
-  const key = ddmmyyyy(date);
+  const key = isoDate(date);
   if (priceByDate.has(key)) return priceByDate.get(key);
 
   let price = null;
+
+  // 1) Coinpaprika — clean per-day snapshot.
   try {
     const d = await fetchJson(
-      `https://api.coingecko.com/api/v3/coins/solana/history?date=${key}&localization=false`,
+      `https://api.coinpaprika.com/v1/tickers/sol-solana/historical?start=${key}&interval=1d&limit=1`,
     );
-    const usd = Number(d?.market_data?.current_price?.usd);
+    const usd = Number(d?.[0]?.price);
     if (Number.isFinite(usd) && usd > 0) price = usd;
-  } catch (e) {
-    console.warn(`  ! CoinGecko history failed for ${key}: ${e.message}`);
+  } catch {
+    /* try next */
   }
 
+  // 2) CryptoCompare daily close.
+  if (price == null) {
+    try {
+      const ts = Math.floor(new Date(`${key}T00:00:00Z`).getTime() / 1000);
+      const d = await fetchJson(
+        `https://min-api.cryptocompare.com/data/v2/histoday?fsym=SOL&tsym=USD&limit=1&toTs=${ts}`,
+      );
+      const usd = Number(d?.Data?.Data?.at(-1)?.close);
+      if (Number.isFinite(usd) && usd > 0) price = usd;
+    } catch {
+      /* try next */
+    }
+  }
+
+  // 3) CoinGecko history.
+  if (price == null) {
+    try {
+      const d = await fetchJson(
+        `https://api.coingecko.com/api/v3/coins/solana/history?date=${ddmmyyyy(date)}&localization=false`,
+      );
+      const usd = Number(d?.market_data?.current_price?.usd);
+      if (Number.isFinite(usd) && usd > 0) price = usd;
+    } catch {
+      /* give up for this date */
+    }
+  }
+
+  if (price == null) console.warn(`  ! No historical SOL price found for ${key}`);
   priceByDate.set(key, price);
-  // Be gentle with the free CoinGecko rate limit between unique-date lookups.
-  await sleep(2500);
+  await sleep(1200); // be gentle with free rate limits
   return price;
 }
 
