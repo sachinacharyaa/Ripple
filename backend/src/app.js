@@ -137,6 +137,11 @@ const purchaseSchema = new mongoose.Schema(
     currency: { type: String, enum: ["PUSD", "SOL", "USDC"], default: "PUSD" },
     amount: { type: Number, required: true },
     amountSol: { type: Number, default: 0 },
+    // Fiat value locked in at the moment of purchase. Revenue/trade reporting must use
+    // these recorded values, never a recalculation with the current SOL price.
+    solUsdRateAtPurchase: { type: Number, default: 0 },
+    usdValueAtPurchase: { type: Number, default: 0 },
+    purchaseTimestamp: { type: Date, default: Date.now },
     status: { type: String, default: "confirmed" },
   },
   { timestamps: true },
@@ -650,6 +655,20 @@ async function fetchSolUsdFromSources() {
   return null;
 }
 
+/** Returns a usable SOL/USD rate: cached (<=60s), else fresh from sources, else last known (may be null). */
+async function getSolUsdRate() {
+  const now = Date.now();
+  if (solPriceCache.usd != null && now - solPriceCache.at < SOL_PRICE_TTL_MS) {
+    return solPriceCache.usd;
+  }
+  const fresh = await fetchSolUsdFromSources();
+  if (fresh) {
+    solPriceCache = { usd: fresh.usd, at: now, source: fresh.source };
+    return fresh.usd;
+  }
+  return solPriceCache.usd;
+}
+
 export function createApp() {
   const app = express();
   app.use(cors({ origin: corsOptions }));
@@ -703,22 +722,10 @@ export function createApp() {
   // Live SOL/USD price — server-side proxy with multi-source fallback + 60s cache.
   // Avoids per-browser CoinGecko CORS / rate-limit failures (admin revenue & trade metrics).
   app.get("/api/sol-price", async (_req, res) => {
-    const now = Date.now();
-    if (solPriceCache.usd != null && now - solPriceCache.at < SOL_PRICE_TTL_MS) {
-      return res.json({ usd: solPriceCache.usd, source: solPriceCache.source, cached: true });
+    const usd = await getSolUsdRate();
+    if (usd != null) {
+      return res.json({ usd, source: solPriceCache.source });
     }
-
-    const fresh = await fetchSolUsdFromSources();
-    if (fresh) {
-      solPriceCache = { usd: fresh.usd, at: now, source: fresh.source };
-      return res.json({ usd: fresh.usd, source: fresh.source, cached: false });
-    }
-
-    if (solPriceCache.usd != null) {
-      // Serve last known price if every source is temporarily down.
-      return res.json({ usd: solPriceCache.usd, source: solPriceCache.source, cached: true, stale: true });
-    }
-
     return res.status(503).json({ usd: null, message: "SOL price unavailable" });
   });
 
@@ -891,8 +898,43 @@ export function createApp() {
         return true;
       };
 
+      // Current rate is ONLY used as a best-effort fallback for legacy purchases recorded
+      // before usdValueAtPurchase existed. New purchases always use their locked-in value.
+      const legacyFallbackRate = (await getSolUsdRate()) || 0;
+
       const byProduct = await Purchase.aggregate([
         { $match: { status: "confirmed" } },
+        {
+          $addFields: {
+            _usdAtPurchase: {
+              $cond: [
+                { $gt: [{ $ifNull: ["$usdValueAtPurchase", 0] }, 0] },
+                "$usdValueAtPurchase",
+                {
+                  // Legacy rows: reconstruct USD using the face value (stablecoins) or the
+                  // current rate (SOL). Only affects purchases made before this feature.
+                  $add: [
+                    {
+                      $cond: [
+                        { $eq: ["$currency", "SOL"] },
+                        { $multiply: [{ $ifNull: ["$amountSol", 0] }, legacyFallbackRate] },
+                        0,
+                      ],
+                    },
+                    {
+                      $cond: [
+                        { $eq: ["$currency", "PUSD"] },
+                        { $divide: [{ $ifNull: ["$amount", 0] }, 1000000] },
+                        0,
+                      ],
+                    },
+                    { $cond: [{ $eq: ["$currency", "USDC"] }, { $ifNull: ["$amount", 0] }, 0] },
+                  ],
+                },
+              ],
+            },
+          },
+        },
         {
           $group: {
             _id: "$productId",
@@ -909,6 +951,17 @@ export function createApp() {
             totalRevenueSol: {
               $sum: {
                 $cond: [{ $eq: ["$currency", "SOL"] }, "$amountSol", 0],
+              },
+            },
+            // Historical fiat value (rate at purchase time), split by source currency.
+            usdAtPurchaseStable: {
+              $sum: {
+                $cond: [{ $in: ["$currency", ["PUSD", "USDC"]] }, "$_usdAtPurchase", 0],
+              },
+            },
+            usdAtPurchaseSol: {
+              $sum: {
+                $cond: [{ $eq: ["$currency", "SOL"] }, "$_usdAtPurchase", 0],
               },
             },
             buyersCount: { $sum: 1 },
@@ -929,6 +982,8 @@ export function createApp() {
           // PUSD is stored in base units (1e6); USDC is stored in human units.
           totalRevenueUsd: (item.totalRevenuePusdBase || 0) / 1_000_000 + (item.totalRevenueUsdc || 0),
           totalRevenueSol: item.totalRevenueSol || 0,
+          usdAtPurchaseStable: item.usdAtPurchaseStable || 0,
+          usdAtPurchaseSol: item.usdAtPurchaseSol || 0,
           buyersCount: item.buyersCount || 0,
         }));
 
@@ -937,6 +992,14 @@ export function createApp() {
       const totalPlatformRevenueUsd = platformFeeFromGross(sumGrossUsd);
       const totalPlatformRevenueSol = platformFeeFromGross(sumGrossSol);
       const totalPurchases = formatted.reduce((acc, row) => acc + row.buyersCount, 0);
+
+      // Historical USD (rate locked at purchase time) — the source of truth for reporting.
+      const stableTradeUsd = formatted.reduce((acc, row) => acc + row.usdAtPurchaseStable, 0);
+      const solTradeUsd = formatted.reduce((acc, row) => acc + row.usdAtPurchaseSol, 0);
+      const totalTradeUsd = stableTradeUsd + solTradeUsd;
+      const revenueUsdStable = platformFeeFromGross(stableTradeUsd);
+      const revenueUsdSol = platformFeeFromGross(solTradeUsd);
+      const totalRevenueUsd = revenueUsdStable + revenueUsdSol;
 
       const platformRevenueUsdByProduct = formatted
         .filter((row) => row.totalRevenueUsd > 0)
@@ -992,6 +1055,12 @@ export function createApp() {
         .filter(Boolean);
 
       return res.json({
+        // Historical fiat (rate at purchase time) — use these for revenue & trade reporting.
+        totalTradeUsd,
+        totalRevenueUsd,
+        revenueUsdStable,
+        revenueUsdSol,
+        // Native-token breakdowns (leaderboard "Revenue" column + reference).
         totalPlatformRevenueUsd,
         totalPlatformRevenueSol,
         totalProductSalesUsd: sumGrossUsd,
@@ -1331,6 +1400,21 @@ export function createApp() {
       if (!check.ok) return res.status(400).json({ message: check.reason || "Verification failed" });
     }
 
+    // Lock in the fiat value at the moment of purchase. Never recompute this later with
+    // the current SOL price — historical revenue/trade must reflect the rate at purchase time.
+    let solUsdRateAtPurchase = 0;
+    let usdValueAtPurchase = 0;
+    if (checkoutCurrency === "SOL") {
+      const rate = await getSolUsdRate(); // may be null if every price source is down
+      solUsdRateAtPurchase = Number.isFinite(rate) && rate > 0 ? rate : 0;
+      usdValueAtPurchase = (product.priceSol || 0) * solUsdRateAtPurchase;
+    } else if (checkoutCurrency === "PUSD") {
+      // PUSD amount is stored in base units (1e6); face value is the USD value.
+      usdValueAtPurchase = (product.price || 0) / 1_000_000;
+    } else if (checkoutCurrency === "USDC") {
+      usdValueAtPurchase = product.priceUsdc || 0;
+    }
+
     try {
       await Purchase.create({
         productId,
@@ -1345,6 +1429,9 @@ export function createApp() {
               ? product.priceUsdc
               : product.priceSol,
         amountSol: checkoutCurrency === "SOL" ? product.priceSol : 0,
+        solUsdRateAtPurchase,
+        usdValueAtPurchase,
+        purchaseTimestamp: new Date(),
         status: "confirmed",
       });
     } catch (e) {
