@@ -608,6 +608,48 @@ function corsOptions(origin, callback) {
   return callback(new Error("CORS blocked for this origin"));
 }
 
+const SOL_PRICE_TTL_MS = 60_000;
+let solPriceCache = { usd: null, at: 0, source: null };
+
+const SOL_MINT = "So11111111111111111111111111111111111111112";
+
+async function fetchJsonWithTimeout(url, ms = 7000) {
+  const res = await fetch(url, { signal: AbortSignal.timeout(ms) });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+}
+
+/** Try several public price feeds so a single provider outage doesn't break admin metrics. */
+async function fetchSolUsdFromSources() {
+  try {
+    const d = await fetchJsonWithTimeout(
+      "https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd",
+    );
+    const usd = d?.solana?.usd;
+    if (typeof usd === "number" && usd > 0) return { usd, source: "coingecko" };
+  } catch {
+    /* try next source */
+  }
+
+  try {
+    const d = await fetchJsonWithTimeout("https://api.coinbase.com/v2/prices/SOL-USD/spot");
+    const usd = Number(d?.data?.amount);
+    if (Number.isFinite(usd) && usd > 0) return { usd, source: "coinbase" };
+  } catch {
+    /* try next source */
+  }
+
+  try {
+    const d = await fetchJsonWithTimeout(`https://lite-api.jup.ag/price/v3?ids=${SOL_MINT}`);
+    const usd = Number(d?.[SOL_MINT]?.usdPrice);
+    if (Number.isFinite(usd) && usd > 0) return { usd, source: "jupiter" };
+  } catch {
+    /* give up */
+  }
+
+  return null;
+}
+
 export function createApp() {
   const app = express();
   app.use(cors({ origin: corsOptions }));
@@ -656,6 +698,28 @@ export function createApp() {
       platformFeeWallet: RIPPLE_FEE_WALLET,
       platformFeePercent: PLATFORM_FEE_PERCENT,
     });
+  });
+
+  // Live SOL/USD price — server-side proxy with multi-source fallback + 60s cache.
+  // Avoids per-browser CoinGecko CORS / rate-limit failures (admin revenue & trade metrics).
+  app.get("/api/sol-price", async (_req, res) => {
+    const now = Date.now();
+    if (solPriceCache.usd != null && now - solPriceCache.at < SOL_PRICE_TTL_MS) {
+      return res.json({ usd: solPriceCache.usd, source: solPriceCache.source, cached: true });
+    }
+
+    const fresh = await fetchSolUsdFromSources();
+    if (fresh) {
+      solPriceCache = { usd: fresh.usd, at: now, source: fresh.source };
+      return res.json({ usd: fresh.usd, source: fresh.source, cached: false });
+    }
+
+    if (solPriceCache.usd != null) {
+      // Serve last known price if every source is temporarily down.
+      return res.json({ usd: solPriceCache.usd, source: solPriceCache.source, cached: true, stale: true });
+    }
+
+    return res.status(503).json({ usd: null, message: "SOL price unavailable" });
   });
 
   // Footer email signup — separate MongoDB (`subs-rivo`), not the main app database
