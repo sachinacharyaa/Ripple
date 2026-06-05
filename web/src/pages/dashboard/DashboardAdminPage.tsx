@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent, type RefObject } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { api } from "../../lib/api";
-import { fetchSolUsdPrice, solToUsd } from "../../lib/solPrice";
 import {
   formatProductPrice,
   formatTokenAmount,
@@ -39,12 +38,11 @@ function formatLeaderboardRevenue(item: TopProduct): string {
 }
 
 type LeaderboardData = {
-  totalPlatformRevenueUsd: number;
-  totalPlatformRevenueSol: number;
-  totalProductSalesUsd: number;
-  totalProductSalesSol: number;
-  totalRivoSalesUsd: number;
-  totalRivoSalesSol: number;
+  // Historical fiat values — locked in at each purchase using that moment's SOL/USD rate.
+  totalTradeUsd: number;
+  totalRevenueUsd: number;
+  revenueUsdStable: number;
+  revenueUsdSol: number;
   totalPurchases: number;
   topProducts: TopProduct[];
 };
@@ -52,9 +50,9 @@ type LeaderboardData = {
 type PlatformRevenueView = "usd" | "sol" | "total";
 
 const PLATFORM_REVENUE_OPTIONS: { id: PlatformRevenueView; label: string }[] = [
-  { id: "usd", label: "Platform Revenue (USD)" },
-  { id: "sol", label: "Platform Revenue (SOL)" },
   { id: "total", label: "Total Platform Revenue" },
+  { id: "sol", label: "Revenue from SOL sales" },
+  { id: "usd", label: "Revenue from stablecoins" },
 ];
 
 function formatUsd(n: number) {
@@ -69,7 +67,6 @@ export function DashboardAdminPage() {
   const [error, setError] = useState("");
   const [revenueView, setRevenueView] = useState<PlatformRevenueView>("total");
   const [revenueMenuOpen, setRevenueMenuOpen] = useState(false);
-  const [solUsd, setSolUsd] = useState<number | null>(null);
   const revenueMenuRef = useRef<HTMLDivElement>(null);
 
   const isAdmin = walletAddress === "6jaM7rGsMgk81pogFqMAGj7K8AByW8tQTTEnmDYFQpbH";
@@ -93,20 +90,6 @@ export function DashboardAdminPage() {
   }, [walletAddress, isAdmin]);
 
   useEffect(() => {
-    let cancelled = false;
-    const load = async () => {
-      const price = await fetchSolUsdPrice();
-      if (!cancelled) setSolUsd(price);
-    };
-    load();
-    const id = window.setInterval(load, 60_000);
-    return () => {
-      cancelled = true;
-      window.clearInterval(id);
-    };
-  }, []);
-
-  useEffect(() => {
     const close = (e: Event) => {
       if (!revenueMenuRef.current?.contains(e.target as Node)) setRevenueMenuOpen(false);
     };
@@ -114,58 +97,21 @@ export function DashboardAdminPage() {
     return () => document.removeEventListener("click", close);
   }, []);
 
-  const platformRevenueSolUsd = useMemo(() => {
-    if (!data) return null;
-    return solToUsd(data.totalPlatformRevenueSol, solUsd);
-  }, [data, solUsd]);
-
-  const totalPlatformRevenueCombinedUsd = useMemo(() => {
-    if (!data || platformRevenueSolUsd == null) return null;
-    return data.totalPlatformRevenueUsd + platformRevenueSolUsd;
-  }, [data, platformRevenueSolUsd]);
-
-  const productSalesSolUsd = useMemo(() => {
-    if (!data) return null;
-    return solToUsd(data.totalProductSalesSol, solUsd);
-  }, [data, solUsd]);
-
-  const rivoSalesSolUsd = useMemo(() => {
-    if (!data) return null;
-    return solToUsd(data.totalRivoSalesSol, solUsd);
-  }, [data, solUsd]);
-
-  const totalProductSalesCombinedUsd = useMemo(() => {
-    if (!data || productSalesSolUsd == null) return null;
-    return data.totalProductSalesUsd + productSalesSolUsd;
-  }, [data, productSalesSolUsd]);
-
-  const totalRivoSalesCombinedUsd = useMemo(() => {
-    if (!data || rivoSalesSolUsd == null) return null;
-    return data.totalRivoSalesUsd + rivoSalesSolUsd;
-  }, [data, rivoSalesSolUsd]);
-
-  const totalTradeUsd = useMemo(() => {
-    if (totalProductSalesCombinedUsd == null || totalRivoSalesCombinedUsd == null) return null;
-    return totalProductSalesCombinedUsd + totalRivoSalesCombinedUsd;
-  }, [totalProductSalesCombinedUsd, totalRivoSalesCombinedUsd]);
-
+  // All figures use the fiat value recorded at the time of each purchase (provided by the
+  // backend), never a recalculation with the current SOL price.
   const revenueHeadline = useMemo(() => {
     if (!data) return "--";
-    if (revenueView === "usd") return formatUsd(data.totalPlatformRevenueUsd);
-    if (revenueView === "sol") {
-      if (platformRevenueSolUsd == null) return "--";
-      return formatUsd(platformRevenueSolUsd);
-    }
-    if (totalPlatformRevenueCombinedUsd == null) return "--";
-    return formatUsd(totalPlatformRevenueCombinedUsd);
-  }, [data, revenueView, platformRevenueSolUsd, totalPlatformRevenueCombinedUsd]);
+    if (revenueView === "usd") return formatUsd(data.revenueUsdStable);
+    if (revenueView === "sol") return formatUsd(data.revenueUsdSol);
+    return formatUsd(data.totalRevenueUsd);
+  }, [data, revenueView]);
 
   const activeOption = PLATFORM_REVENUE_OPTIONS.find((o) => o.id === revenueView);
 
   const tradeHeadline = useMemo(() => {
-    if (!data || totalTradeUsd == null) return "--";
-    return formatUsd(totalTradeUsd);
-  }, [data, totalTradeUsd]);
+    if (!data) return "--";
+    return formatUsd(data.totalTradeUsd);
+  }, [data]);
 
   if (!publicKey) {
     return <div className="page-section">Connect your admin wallet to view this page.</div>;
