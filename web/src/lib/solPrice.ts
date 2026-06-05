@@ -1,5 +1,20 @@
-/** Live SOL/USD for admin metrics (CoinGecko public API). */
+import { api } from "./api";
+
+/**
+ * Live SOL/USD for admin metrics.
+ * Prefers the backend proxy (`/api/sol-price`) which is cached and uses multiple
+ * sources — this avoids per-browser CoinGecko CORS/rate-limit failures in production.
+ * Falls back to a direct CoinGecko call if the backend is unreachable.
+ */
 export async function fetchSolUsdPrice(): Promise<number | null> {
+  try {
+    const res = await api.get<{ usd?: number | null }>("/sol-price", { timeout: 8000 });
+    const usd = res.data?.usd;
+    if (typeof usd === "number" && usd > 0) return usd;
+  } catch {
+    /* fall back to direct provider below */
+  }
+
   try {
     const res = await fetch(
       "https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd",
