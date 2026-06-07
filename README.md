@@ -123,7 +123,7 @@ sequenceDiagram
 
 ### How stablecoins like PUSD work in Rivo
 
-Rivo natively supports **PUSD** (PALM USD) alongside **USDC** and **SOL** for checkout. The stablecoin integration is fully decentralized and non-custodial.
+Rivo natively supports **PUSD** (PALM USD) alongside **USDC** and **SOL** for checkout. The stablecoin integration is fully decentralized and non-custodial. More stablecoins will be integrate before production ready to main-net deployment.
 
 1. **Pricing setup:** Creators price their items in PUSD.
 2. **Token Accounts:** When a buyer clicks "Buy now", the frontend checks if the buyer has a PUSD Associated Token Account (ATA) with enough balance.
@@ -147,7 +147,6 @@ sequenceDiagram
   Solana-->>Rivo Web: Return Tx Signature
   Rivo Web->>Backend API: Verify Signature
 ```
-
 
 ### Production deployment (Vercel)
 
@@ -346,17 +345,19 @@ npm run build
 
 See `backend/.env.example`. Key variables:
 
-| Variable                                             | Purpose                                    |
-| ---------------------------------------------------- | ------------------------------------------ |
-| `PORT`                                               | Local server port (default `4000`)         |
-| `MONGODB_URI`                                        | MongoDB connection string                  |
-| `SOLANA_RPC`                                         | Solana JSON-RPC URL                        |
-| `CORS_ORIGINS`                                       | Allowed frontend origins (comma-separated) |
-| `RIPPLE_FEE_WALLET`                                  | Platform fee recipient (legacy env name)   |
-| `PUSD_MINT_ADDRESS` / `USDC_MINT_ADDRESS`              | SPL mints for checkout                     |
-| `PINATA_JWT`                                         | Pinata uploads (production / Vercel)       |
-| `IPFS_LOCAL_ONLY=1`                                  | Force Kubo-only; ignore Pinata locally     |
-| `IPFS_API_*` / `IPFS_GATEWAY_*`                      | Local Kubo settings                        |
+| Variable                                  | Purpose                                                          |
+| ----------------------------------------- | ---------------------------------------------------------------- |
+| `PORT`                                    | Local server port (default `4000`)                               |
+| `MONGODB_URI`                             | MongoDB connection string (products, purchases)                  |
+| `SUBSCRIBERS_MONGODB_URI`                 | MongoDB for footer email signup (`subs-rivo` database)           |
+| `SOLANA_RPC`                              | Solana JSON-RPC URL                                              |
+| `CORS_ORIGINS`                            | Allowed frontend origins (comma-separated)                       |
+| `RIPPLE_FEE_WALLET`                       | Platform fee recipient — must match checkout (`GET /api/config`) |
+| `VITE_RIPPLE_FEE_WALLET`                  | Optional frontend override (same address as above)               |
+| `PUSD_MINT_ADDRESS` / `USDC_MINT_ADDRESS` | SPL mints for checkout                                           |
+| `PINATA_JWT`                              | Pinata uploads (production / Vercel)                             |
+| `IPFS_LOCAL_ONLY=1`                       | Force Kubo-only; ignore Pinata locally                           |
+| `IPFS_API_*` / `IPFS_GATEWAY_*`           | Local Kubo settings                                              |
 
 ### Frontend — `web/.env`
 
@@ -395,11 +396,11 @@ Treat public IPFS content as readable if the CID is known; gate access through v
 
 Deployed via root **`vercel.json`**:
 
-| Setting | Value                                                      |
-| ------- | ---------------------------------------------------------- |
-| Install | `npm install --prefix web && npm install --prefix backend` |
-| Build   | `npm run build --prefix web`                               |
-| Output  | `web/dist`                                                 |
+| Setting | Value                                                       |
+| ------- | ----------------------------------------------------------- |
+| Install | `npm install --prefix web && npm install --prefix backend`  |
+| Build   | `npm run build --prefix web`                                |
+| Output  | `web/dist`                                                  |
 | API     | `api/index.js` → `backend/api/index.js` (rewrites `/api/*`) |
 
 ### Vercel dashboard (important)
@@ -412,16 +413,20 @@ Deployed via root **`vercel.json`**:
 
 **Troubleshooting:** If the homepage shows Vercel `404: NOT_FOUND` but `GET /api/health` works, the API deployed without the static bundle — fix **Output directory** / **Root directory** and redeploy.
 
+**Product upload on Vercel:** `GET /api/health` must show `"uploads": "pinata"`. If it shows `"misconfigured"`, add `PINATA_JWT` in Vercel env vars and redeploy. Add the same JWT as `VITE_PINATA_JWT` (Production + Preview), then trigger a new deploy so the frontend can upload via Pinata from the browser.
+
 ### Required production env vars
 
 ```env
 MONGODB_URI=
+SUBSCRIBERS_MONGODB_URI=mongodb+srv://<user>:<password>@<cluster>/subs-rivo?retryWrites=true&w=majority
 SOLANA_RPC=https://api.devnet.solana.com
 CORS_ORIGINS=https://rivolabs.app,https://www.rivolabs.app
 RIPPLE_FEE_WALLET=
 PUSD_MINT_ADDRESS=
-PINATA_JWT=
-VITE_PINATA_JWT=
+PINATA_JWT=                    # required on Vercel — same Pinata scoped JWT as below
+VITE_PINATA_JWT=               # required on Vercel — baked into web build; enables browser→Pinata uploads
+IPFS_GATEWAY_URL=https://gateway.pinata.cloud/ipfs
 IPFS_GATEWAY_FALLBACK_URL=https://ipfs.io/ipfs
 VITE_API_URL=/api
 VITE_SOLANA_RPC=https://api.devnet.solana.com
