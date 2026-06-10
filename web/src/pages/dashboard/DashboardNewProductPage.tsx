@@ -14,7 +14,7 @@ import { uploadProductDeliveryFiles } from "../../lib/productFileUpload";
 
 const PRODUCT_TYPES = [
   { id: "digital", title: "Digital product", desc: "Files, templates, presets, or downloads.", emoji: "📦" },
-  { id: "course", title: "Course or tutorial", desc: "Structured lessons buyers unlock.", emoji: "🎓" },
+  { id: "course", title: "Course or tutorial", desc: "Short form structured video content buyers unlock.", emoji: "🎓" },
   { id: "ebook", title: "E-book", desc: "Long-form written content.", emoji: "📖" },
   { id: "membership", title: "Membership", desc: "Recurring access to your work.", emoji: "⭐", comingSoon: true },
   { id: "bundle", title: "Bundle", desc: "Multiple products in one.", emoji: "🎁", comingSoon: true },
