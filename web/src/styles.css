@@ -3128,6 +3128,20 @@ textarea {
 
 .gum-type-card--disabled {
   cursor: not-allowed;
+  opacity: 0.55;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.gum-type-card__soon {
+  margin-top: auto;
+  padding-top: 10px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: rgba(255, 144, 232, 0.75);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
 }
 
 .gum-type-card__emoji {

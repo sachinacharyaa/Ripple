@@ -16,8 +16,8 @@ const PRODUCT_TYPES = [
   { id: "digital", title: "Digital product", desc: "Files, templates, presets, or downloads.", emoji: "📦" },
   { id: "course", title: "Course or tutorial", desc: "Structured lessons buyers unlock.", emoji: "🎓" },
   { id: "ebook", title: "E-book", desc: "Long-form written content.", emoji: "📖" },
-  { id: "membership", title: "Membership", desc: "Recurring access to your work.", emoji: "⭐" },
-  { id: "bundle", title: "Bundle", desc: "Multiple products in one.", emoji: "🎁" },
+  { id: "membership", title: "Membership", desc: "Recurring access to your work.", emoji: "⭐", comingSoon: true },
+  { id: "bundle", title: "Bundle", desc: "Multiple products in one.", emoji: "🎁", comingSoon: true },
 ];
 
 /** Matches backend `multer` max files per product. */
@@ -371,18 +371,27 @@ export function DashboardNewProductPage() {
             <div className="gum-field">
               <span className="gum-label">Products</span>
               <div className="gum-type-grid">
-                {PRODUCT_TYPES.map((t) => (
-                  <button
-                    key={t.id}
-                    type="button"
-                    className={`gum-type-card${draft.productType === t.id ? " gum-type-card--selected" : ""}`}
-                    onClick={() => setDraft((d) => ({ ...d, productType: t.id }))}
-                  >
-                    <span className="gum-type-card__emoji">{t.emoji}</span>
-                    <div className="gum-type-card__title">{t.title}</div>
-                    <p className="gum-type-card__desc">{t.desc}</p>
-                  </button>
-                ))}
+                {PRODUCT_TYPES.map((t) =>
+                  t.comingSoon ? (
+                    <div key={t.id} className="gum-type-card gum-type-card--disabled">
+                      <span className="gum-type-card__emoji">{t.emoji}</span>
+                      <div className="gum-type-card__title">{t.title}</div>
+                      <p className="gum-type-card__desc">{t.desc}</p>
+                      <span className="gum-type-card__soon">Coming soon!</span>
+                    </div>
+                  ) : (
+                    <button
+                      key={t.id}
+                      type="button"
+                      className={`gum-type-card${draft.productType === t.id ? " gum-type-card--selected" : ""}`}
+                      onClick={() => setDraft((d) => ({ ...d, productType: t.id }))}
+                    >
+                      <span className="gum-type-card__emoji">{t.emoji}</span>
+                      <div className="gum-type-card__title">{t.title}</div>
+                      <p className="gum-type-card__desc">{t.desc}</p>
+                    </button>
+                  )
+                )}
               </div>
             </div>
 
