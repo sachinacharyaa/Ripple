@@ -27,6 +27,9 @@ import { DashboardPaymentPage } from "./pages/dashboard/DashboardPaymentPage";
 import { DashboardDiscoverPage } from "./pages/dashboard/DashboardDiscoverPage";
 import { DashboardPurchasesPage } from "./pages/dashboard/DashboardPurchasesPage";
 import { DashboardAdminPage } from "./pages/dashboard/DashboardAdminPage";
+import { DashboardProfileSettingsPage } from "./pages/dashboard/DashboardProfileSettingsPage";
+import { creatorInitials } from "./lib/creatorUtils";
+import type { PublicCreatorProfile } from "./types/creator";
 
 type Product = ProductShape;
 type AccessFile = {
@@ -301,6 +304,153 @@ function FaqPage() {
       <FaqSection />
     </Layout>
   );
+}
+
+function CreatorProfilePage({ handle }: { handle: string }) {
+  const [profile, setProfile] = useState<PublicCreatorProfile | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let active = true;
+    setLoading(true);
+    setError("");
+    api
+      .get<PublicCreatorProfile>(`/creators/handle/${encodeURIComponent(handle)}`)
+      .then((result) => {
+        if (active) setProfile(result.data);
+      })
+      .catch(() => {
+        if (active) setError("Creator profile not found.");
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [handle]);
+
+  if (loading) {
+    return (
+      <Layout hideFooterCta>
+        <section className="creator-public creator-public--loading" aria-label="Loading creator profile">
+          <div className="creator-public__skeleton skeleton-line skeleton-line--title" />
+          <div className="creator-public__skeleton skeleton-line" />
+        </section>
+      </Layout>
+    );
+  }
+
+  if (error || !profile) {
+    return (
+      <Layout hideFooterCta>
+        <section className="creator-public creator-public--empty">
+          <div className="gum-empty">
+            <p>{error || "Creator profile not found."}</p>
+            <Link className="gum-btn gum-btn--pink" to="/dashboard/discover">Browse products</Link>
+          </div>
+        </section>
+      </Layout>
+    );
+  }
+
+  const displayName = profile.displayName || `@${profile.handle}`;
+  const socialLinks = [
+    profile.socialLinks?.website ? { label: "Website", href: profile.socialLinks.website } : null,
+    profile.socialLinks?.x ? { label: "X", href: profile.socialLinks.x } : null,
+    profile.socialLinks?.discord ? { label: "Discord", href: profile.socialLinks.discord } : null,
+  ].filter((link): link is { label: string; href: string } => Boolean(link));
+
+  const productCard = (product: ProductShape) => (
+    <Link to={productPublicPath(product)} key={product._id} className="creator-product-card">
+      {product.thumbnailUrl ? (
+        <img className="creator-product-card__image" src={product.thumbnailUrl} alt="" />
+      ) : (
+        <div className="creator-product-card__image creator-product-card__image--placeholder" aria-hidden />
+      )}
+      <div className="creator-product-card__body">
+        <h3>{product.title}</h3>
+        <p>{product.summary || product.description}</p>
+        <ProductPriceWithLogo product={product} />
+      </div>
+    </Link>
+  );
+
+  return (
+    <Layout hideFooterCta>
+      <section className="creator-public">
+        <header className="creator-public__header">
+          <div className="creator-public__avatar" aria-hidden>
+            {creatorInitials(profile.displayName, profile.handle)}
+          </div>
+          <div className="creator-public__identity">
+            <p className="creator-public__eyebrow">Creator storefront</p>
+            <h1>{displayName}</h1>
+            <p className="creator-public__handle">@{profile.handle}</p>
+            {profile.bio ? <p className="creator-public__bio">{profile.bio}</p> : null}
+            {socialLinks.length > 0 ? (
+              <div className="creator-public__links">
+                {socialLinks.map((link) => (
+                  <a key={link.label} href={link.href} target="_blank" rel="noreferrer">
+                    {link.label} <span aria-hidden>↗</span>
+                  </a>
+                ))}
+              </div>
+            ) : null}
+          </div>
+        </header>
+
+        {profile.featuredProduct ? (
+          <section className="creator-featured">
+            <span className="creator-section__eyebrow">Featured product</span>
+            <Link className="creator-featured__card" to={productPublicPath(profile.featuredProduct)}>
+              {profile.featuredProduct.thumbnailUrl ? (
+                <img src={profile.featuredProduct.thumbnailUrl} alt="" />
+              ) : (
+                <div className="creator-featured__art" aria-hidden>R</div>
+              )}
+              <div>
+                <h2>{profile.featuredProduct.title}</h2>
+                <p>{profile.featuredProduct.summary || profile.featuredProduct.description}</p>
+                <ProductPriceWithLogo product={profile.featuredProduct} />
+              </div>
+              <span className="creator-featured__arrow" aria-hidden>→</span>
+            </Link>
+          </section>
+        ) : null}
+
+        {profile.collections.map((collection) => (
+          <section className="creator-section" key={collection._id || collection.title}>
+            <div className="creator-section__head">
+              <span className="creator-section__eyebrow">Collection</span>
+              <h2>{collection.title}</h2>
+            </div>
+            <div className="creator-product-grid">
+              {(collection.products ?? []).map(productCard)}
+            </div>
+          </section>
+        ))}
+
+        <section className="creator-section">
+          <div className="creator-section__head">
+            <span className="creator-section__eyebrow">All products</span>
+            <h2>From {displayName}</h2>
+          </div>
+          {profile.products.length > 0 ? (
+            <div className="creator-product-grid">{profile.products.map(productCard)}</div>
+          ) : (
+            <div className="gum-empty gum-empty--inline">No published products yet.</div>
+          )}
+        </section>
+      </section>
+    </Layout>
+  );
+}
+
+function PublicEntry() {
+  const { slug } = useParams();
+  return slug?.startsWith("@") ? <CreatorProfilePage handle={slug.slice(1)} /> : <ProductPage />;
 }
 
 const FAQ_ITEMS = [
@@ -856,9 +1006,10 @@ export function App() {
           <Route path="purchases" element={<DashboardPurchasesPage />} />
           <Route path="admin" element={<DashboardAdminPage />} />
           <Route path="discover" element={<DashboardDiscoverPage />} />
+          <Route path="settings" element={<DashboardProfileSettingsPage />} />
         </Route>
         <Route path="/p/:id" element={<ProductPage />} />
-        <Route path="/:slug" element={<ProductPage />} />
+        <Route path="/:slug" element={<PublicEntry />} />
       </Routes>
     </>
   );
