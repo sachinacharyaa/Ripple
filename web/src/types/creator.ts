@@ -3,7 +3,6 @@ import type { ProductShape } from "./product";
 export type CreatorSocialLinks = {
   website?: string;
   x?: string;
-  discord?: string;
 };
 
 export type CreatorCollection = {

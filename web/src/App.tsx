@@ -359,7 +359,6 @@ function CreatorProfilePage({ handle }: { handle: string }) {
   const socialLinks = [
     profile.socialLinks?.website ? { label: "Website", href: profile.socialLinks.website } : null,
     profile.socialLinks?.x ? { label: "X", href: profile.socialLinks.x } : null,
-    profile.socialLinks?.discord ? { label: "Discord", href: profile.socialLinks.discord } : null,
   ].filter((link): link is { label: string; href: string } => Boolean(link));
 
   const productCard = (product: ProductShape) => (

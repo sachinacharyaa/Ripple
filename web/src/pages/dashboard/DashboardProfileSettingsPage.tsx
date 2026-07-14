@@ -10,7 +10,7 @@ const emptyProfile = (wallet: string): CreatorProfileShape => ({
   handle: "",
   displayName: "",
   bio: "",
-  socialLinks: { website: "", x: "", discord: "" },
+  socialLinks: { website: "", x: "" },
   featuredProductId: "",
   collections: [],
 });
@@ -40,7 +40,6 @@ export function DashboardProfileSettingsPage() {
           socialLinks: {
             website: profileResult.data.socialLinks?.website ?? "",
             x: profileResult.data.socialLinks?.x ?? "",
-            discord: profileResult.data.socialLinks?.discord ?? "",
           },
         };
         setProfile(nextProfile);
@@ -91,7 +90,6 @@ export function DashboardProfileSettingsPage() {
         socialLinks: {
           website: result.data.socialLinks?.website ?? "",
           x: result.data.socialLinks?.x ?? "",
-          discord: result.data.socialLinks?.discord ?? "",
         },
       };
       setProfile(saved);
@@ -209,7 +207,6 @@ export function DashboardProfileSettingsPage() {
             {([
               ["website", "Website", "https://your-site.com"],
               ["x", "X profile", "https://x.com/yourhandle"],
-              ["discord", "Discord invite", "https://discord.gg/your-community"],
             ] as const).map(([key, label, placeholder]) => (
               <div className="gum-field" key={key}>
                 <label className="gum-label" htmlFor={`creator-${key}`}>{label}</label>
