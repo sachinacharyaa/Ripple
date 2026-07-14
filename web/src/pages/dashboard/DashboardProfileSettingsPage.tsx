@@ -45,7 +45,7 @@ export function DashboardProfileSettingsPage() {
         setProfile(nextProfile);
       })
       .catch(() => {
-        if (active) setError("Could not load your creator profile. Refresh and try again.");
+        if (active) setProfile(emptyProfile(wallet));
       })
       .finally(() => {
         if (active) setLoading(false);
@@ -65,6 +65,14 @@ export function DashboardProfileSettingsPage() {
     setError("");
     setNotice("");
     const handle = normalizeCreatorHandle(profile.handle);
+    if (!profile.displayName.trim()) {
+      setError("Add a display name before saving your creator profile.");
+      return;
+    }
+    if (!profile.bio.trim()) {
+      setError("Add a short bio before saving your creator profile.");
+      return;
+    }
     if (!/^[a-z0-9_]{3,30}$/.test(handle)) {
       setError("Your profile URL needs 3–30 lowercase letters, numbers, or underscores.");
       return;
@@ -136,7 +144,7 @@ export function DashboardProfileSettingsPage() {
         ) : null}
       </div>
 
-      <form onSubmit={save} noValidate>
+      <form className="gum-profile-form" onSubmit={save} noValidate>
         <section className="gum-panel">
           <div className="gum-panel__head">
             <div>
@@ -146,7 +154,7 @@ export function DashboardProfileSettingsPage() {
           </div>
           <div className="gum-profile-grid">
             <div className="gum-field">
-              <label className="gum-label" htmlFor="creator-display-name">Display name</label>
+              <label className="gum-label" htmlFor="creator-display-name">Display name *</label>
               <input
                 id="creator-display-name"
                 className="gum-input"
@@ -155,6 +163,8 @@ export function DashboardProfileSettingsPage() {
                 maxLength={80}
                 autoComplete="name"
                 placeholder="How buyers should know you"
+                required
+                aria-invalid={Boolean(error && !profile.displayName.trim())}
               />
             </div>
             <div className="gum-field">
@@ -181,7 +191,7 @@ export function DashboardProfileSettingsPage() {
             </div>
           </div>
           <div className="gum-field">
-            <label className="gum-label" htmlFor="creator-bio">Bio</label>
+            <label className="gum-label" htmlFor="creator-bio">Bio *</label>
             <textarea
               id="creator-bio"
               className="gum-input gum-input--area"
@@ -191,6 +201,8 @@ export function DashboardProfileSettingsPage() {
               rows={4}
               placeholder="Tell buyers what you make and who it is for."
               aria-describedby="creator-bio-hint"
+              required
+              aria-invalid={Boolean(error && !profile.bio.trim())}
             />
             <p className="gum-field__hint" id="creator-bio-hint">{profile.bio.length}/600 characters</p>
           </div>
@@ -200,7 +212,7 @@ export function DashboardProfileSettingsPage() {
           <div className="gum-panel__head">
             <div>
               <div className="gum-panel__title">Social links</div>
-              <div className="gum-panel__sub">Give visitors a way to learn more and follow your work.</div>
+              <div className="gum-panel__sub">Optional — we recommend adding a social link so visitors can learn more and follow your work.</div>
             </div>
           </div>
           <div className="gum-profile-grid">
@@ -209,7 +221,7 @@ export function DashboardProfileSettingsPage() {
               ["x", "X profile", "https://x.com/yourhandle"],
             ] as const).map(([key, label, placeholder]) => (
               <div className="gum-field" key={key}>
-                <label className="gum-label" htmlFor={`creator-${key}`}>{label}</label>
+                <label className="gum-label" htmlFor={`creator-${key}`}>{label} <span className="gum-label--dim">(optional)</span></label>
                 <input
                   id={`creator-${key}`}
                   type="url"

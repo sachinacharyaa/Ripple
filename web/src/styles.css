@@ -3839,6 +3839,11 @@ textarea {
 }
 
 /* Creator profile settings and public storefront */
+.gum-profile-form {
+  display: grid;
+  gap: 24px;
+}
+
 .gum-profile-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -4134,6 +4139,7 @@ textarea {
   overflow: hidden;
   color: rgba(255, 255, 255, 0.85);
   line-height: 1.5;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
 }
@@ -4208,6 +4214,7 @@ textarea {
   color: var(--muted);
   font-size: 0.9rem;
   line-height: 1.45;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
 }
