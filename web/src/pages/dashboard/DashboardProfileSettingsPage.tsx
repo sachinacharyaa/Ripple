@@ -3,10 +3,7 @@ import axios from "axios";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { api } from "../../lib/api";
 import { creatorPublicUrl, normalizeCreatorHandle } from "../../lib/creatorUtils";
-import type { CreatorCollection, CreatorProfileShape } from "../../types/creator";
-import type { ProductShape } from "../../types/product";
-
-type EditableCollection = CreatorCollection & { clientId: string };
+import type { CreatorProfileShape } from "../../types/creator";
 
 const emptyProfile = (wallet: string): CreatorProfileShape => ({
   wallet,
@@ -18,19 +15,10 @@ const emptyProfile = (wallet: string): CreatorProfileShape => ({
   collections: [],
 });
 
-function toEditableCollections(collections: CreatorCollection[] = []): EditableCollection[] {
-  return collections.map((collection, index) => ({
-    ...collection,
-    clientId: collection._id || `${Date.now()}-${index}`,
-  }));
-}
-
 export function DashboardProfileSettingsPage() {
   const { publicKey } = useWallet();
   const wallet = publicKey?.toBase58() ?? "";
   const [profile, setProfile] = useState<CreatorProfileShape>(() => emptyProfile(""));
-  const [products, setProducts] = useState<ProductShape[]>([]);
-  const [collections, setCollections] = useState<EditableCollection[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState("");
@@ -41,11 +29,9 @@ export function DashboardProfileSettingsPage() {
     let active = true;
     setLoading(true);
     setError("");
-    Promise.all([
-      api.get<CreatorProfileShape>(`/creators/${wallet}/profile`),
-      api.get<ProductShape[]>(`/products/creator/${wallet}`),
-    ])
-      .then(([profileResult, productsResult]) => {
+    api
+      .get<CreatorProfileShape>(`/creators/${wallet}/profile`)
+      .then((profileResult) => {
         if (!active) return;
         const nextProfile = {
           ...emptyProfile(wallet),
@@ -58,8 +44,6 @@ export function DashboardProfileSettingsPage() {
           },
         };
         setProfile(nextProfile);
-        setCollections(toEditableCollections(nextProfile.collections));
-        setProducts(Array.isArray(productsResult.data) ? productsResult.data : []);
       })
       .catch(() => {
         if (active) setError("Could not load your creator profile. Refresh and try again.");
@@ -77,38 +61,6 @@ export function DashboardProfileSettingsPage() {
     [profile.handle],
   );
 
-  const updateCollection = (clientId: string, update: Partial<EditableCollection>) => {
-    setCollections((current) =>
-      current.map((collection) =>
-        collection.clientId === clientId ? { ...collection, ...update } : collection,
-      ),
-    );
-  };
-
-  const toggleCollectionProduct = (clientId: string, productId: string) => {
-    setCollections((current) =>
-      current.map((collection) => {
-        if (collection.clientId !== clientId) return collection;
-        const productIds = collection.productIds.includes(productId)
-          ? collection.productIds.filter((id) => id !== productId)
-          : [...collection.productIds, productId];
-        return { ...collection, productIds };
-      }),
-    );
-  };
-
-  const addCollection = () => {
-    setCollections((current) => [
-      ...current,
-      {
-        clientId: `${Date.now()}-${current.length}`,
-        title: "",
-        productIds: [],
-        order: current.length,
-      },
-    ]);
-  };
-
   const save = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError("");
@@ -118,11 +70,6 @@ export function DashboardProfileSettingsPage() {
       setError("Your profile URL needs 3–30 lowercase letters, numbers, or underscores.");
       return;
     }
-    if (collections.some((collection) => !collection.title.trim())) {
-      setError("Give every collection a title or remove it.");
-      return;
-    }
-
     setSaving(true);
     try {
       const result = await api.put<CreatorProfileShape>(`/creators/${wallet}/profile`, {
@@ -132,7 +79,7 @@ export function DashboardProfileSettingsPage() {
         bio: profile.bio.trim(),
         socialLinks: profile.socialLinks,
         featuredProductId: profile.featuredProductId || "",
-        collections: collections.map((collection, order) => ({
+        collections: profile.collections.map((collection, order) => ({
           title: collection.title.trim(),
           productIds: collection.productIds,
           order,
@@ -148,7 +95,6 @@ export function DashboardProfileSettingsPage() {
         },
       };
       setProfile(saved);
-      setCollections(toEditableCollections(saved.collections));
       setNotice("Creator profile saved. Your public store is live.");
     } catch (err) {
       const message = axios.isAxiosError(err)
@@ -281,79 +227,6 @@ export function DashboardProfileSettingsPage() {
                 />
               </div>
             ))}
-          </div>
-        </section>
-
-        <section className="gum-panel">
-          <div className="gum-panel__head">
-            <div>
-              <div className="gum-panel__title">Storefront</div>
-              <div className="gum-panel__sub">Feature one product and arrange the rest into collections.</div>
-            </div>
-          </div>
-          <div className="gum-field">
-            <label className="gum-label" htmlFor="featured-product">Featured product</label>
-            <select
-              id="featured-product"
-              className="gum-input"
-              value={profile.featuredProductId ?? ""}
-              onChange={(event) => setProfile((current) => ({ ...current, featuredProductId: event.target.value }))}
-            >
-              <option value="">No featured product</option>
-              {products.filter((product) => product.status === "published").map((product) => (
-                <option key={product._id} value={product._id}>{product.title}</option>
-              ))}
-            </select>
-          </div>
-
-          <div className="gum-collections">
-            <div className="gum-collections__head">
-              <div>
-                <div className="gum-label">Collections</div>
-                <p className="gum-field__hint">Group related products to make your store easier to browse.</p>
-              </div>
-              <button className="gum-btn gum-btn--outline" type="button" onClick={addCollection}>Add collection</button>
-            </div>
-            {collections.length === 0 ? (
-              <p className="gum-empty gum-empty--inline">No collections yet. Add one when you have related products.</p>
-            ) : (
-              collections.map((collection) => (
-                <fieldset className="gum-collection-editor" key={collection.clientId}>
-                  <legend>Collection</legend>
-                  <div className="gum-collection-editor__head">
-                    <input
-                      className="gum-input"
-                      value={collection.title}
-                      onChange={(event) => updateCollection(collection.clientId, { title: event.target.value })}
-                      placeholder="For example: Design resources"
-                      maxLength={80}
-                      aria-label="Collection title"
-                    />
-                    <button
-                      className="gum-text-button"
-                      type="button"
-                      onClick={() => setCollections((current) => current.filter((item) => item.clientId !== collection.clientId))}
-                    >
-                      Remove
-                    </button>
-                  </div>
-                  <div className="gum-collection-products">
-                    {products.length === 0 ? (
-                      <p className="gum-field__hint">Create a product first, then add it to a collection.</p>
-                    ) : products.map((product) => (
-                      <label className="gum-check" key={product._id}>
-                        <input
-                          type="checkbox"
-                          checked={collection.productIds.includes(product._id)}
-                          onChange={() => toggleCollectionProduct(collection.clientId, product._id)}
-                        />
-                        <span>{product.title}</span>
-                      </label>
-                    ))}
-                  </div>
-                </fieldset>
-              ))
-            )}
           </div>
         </section>
 
