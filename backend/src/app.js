@@ -149,6 +149,31 @@ const purchaseSchema = new mongoose.Schema(
 
 const Product = mongoose.models.Product || mongoose.model("Product", productSchema);
 const Purchase = mongoose.models.Purchase || mongoose.model("Purchase", purchaseSchema);
+const creatorCollectionSchema = new mongoose.Schema(
+  {
+    title: { type: String, required: true, trim: true, maxlength: 80 },
+    productIds: { type: [mongoose.Schema.Types.ObjectId], default: [] },
+    order: { type: Number, default: 0 },
+  },
+  { _id: true },
+);
+const creatorProfileSchema = new mongoose.Schema(
+  {
+    wallet: { type: String, required: true, unique: true, index: true },
+    handle: { type: String, required: true, unique: true, index: true, lowercase: true, trim: true },
+    displayName: { type: String, default: "", trim: true, maxlength: 80 },
+    bio: { type: String, default: "", trim: true, maxlength: 600 },
+    socialLinks: {
+      website: { type: String, default: "" },
+      x: { type: String, default: "" },
+    },
+    featuredProductId: { type: mongoose.Schema.Types.ObjectId, default: null },
+    collections: { type: [creatorCollectionSchema], default: [] },
+  },
+  { timestamps: true },
+);
+const CreatorProfile =
+  mongoose.models.CreatorProfile || mongoose.model("CreatorProfile", creatorProfileSchema);
 const visitorEventSchema = new mongoose.Schema(
   {
     path: { type: String, required: true, index: true },
@@ -588,6 +613,43 @@ const updateProductSchema = z
     },
     { message: "Delivery payload is invalid for the selected delivery mode" },
   );
+
+const RESERVED_CREATOR_HANDLES = new Set([
+  "api",
+  "dashboard",
+  "discover",
+  "faq",
+  "p",
+  "products",
+  "settings",
+]);
+const creatorProfileSchemaInput = z.object({
+  creatorWallet: z.string().min(32),
+  handle: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .regex(/^[a-z0-9_]{3,30}$/, "Use 3–30 lowercase letters, numbers, or underscores."),
+  displayName: z.string().trim().min(1, "Display name is required.").max(80),
+  bio: z.string().trim().min(1, "Bio is required.").max(600),
+  socialLinks: z
+    .object({
+      website: z.union([z.string().trim().url(), z.literal("")]).optional(),
+      x: z.union([z.string().trim().url(), z.literal("")]).optional(),
+    })
+    .optional(),
+  featuredProductId: z.union([z.string().regex(/^[a-f\d]{24}$/i), z.literal("")]).optional(),
+  collections: z
+    .array(
+      z.object({
+        title: z.string().trim().min(1).max(80),
+        productIds: z.array(z.string().regex(/^[a-f\d]{24}$/i)).max(50),
+        order: z.number().int().min(0).max(1000),
+      }),
+    )
+    .max(20)
+    .optional(),
+});
 
 function parseCorsOrigins() {
   const raw = process.env.CORS_ORIGINS || "";
@@ -1101,6 +1163,121 @@ export function createApp() {
       res.json(await Product.find({ creatorWallet: req.params.wallet }).sort({ createdAt: -1 }));
     } catch {
       res.status(500).json({ message: "Failed to load creator products" });
+    }
+  });
+
+  app.get("/api/creators/:wallet/profile", async (req, res) => {
+    try {
+      const profile = await CreatorProfile.findOne({ wallet: req.params.wallet });
+      if (!profile) {
+        return res.json({
+          wallet: req.params.wallet,
+          handle: "",
+          displayName: "",
+          bio: "",
+          socialLinks: { website: "", x: "" },
+          featuredProductId: "",
+          collections: [],
+        });
+      }
+      return res.json(profile);
+    } catch {
+      return res.status(500).json({ message: "Failed to load creator profile" });
+    }
+  });
+
+  app.put("/api/creators/:wallet/profile", async (req, res) => {
+    try {
+      const { wallet } = req.params;
+      const parsed = creatorProfileSchemaInput.parse(req.body);
+      if (parsed.creatorWallet !== wallet) {
+        return res.status(403).json({ message: "Connected wallet does not match this profile." });
+      }
+      if (RESERVED_CREATOR_HANDLES.has(parsed.handle)) {
+        return res.status(400).json({ message: "That profile URL is reserved. Choose another handle." });
+      }
+
+      const allProductIds = [
+        ...(parsed.featuredProductId ? [parsed.featuredProductId] : []),
+        ...(parsed.collections ?? []).flatMap((collection) => collection.productIds),
+      ];
+      const uniqueProductIds = [...new Set(allProductIds)];
+      if (uniqueProductIds.length > 0) {
+        const ownedProducts = await Product.find({
+          _id: { $in: uniqueProductIds },
+          creatorWallet: wallet,
+        }).select("_id");
+        if (ownedProducts.length !== uniqueProductIds.length) {
+          return res.status(400).json({ message: "You can only feature or collect your own products." });
+        }
+      }
+
+      const profile = await CreatorProfile.findOneAndUpdate(
+        { wallet },
+        {
+          wallet,
+          handle: parsed.handle,
+          displayName: parsed.displayName,
+          bio: parsed.bio,
+          socialLinks: {
+            website: parsed.socialLinks?.website ?? "",
+            x: parsed.socialLinks?.x ?? "",
+          },
+          featuredProductId: parsed.featuredProductId || null,
+          collections: (parsed.collections ?? []).map((collection) => ({
+            title: collection.title,
+            productIds: collection.productIds,
+            order: collection.order,
+          })),
+        },
+        { new: true, upsert: true, runValidators: true },
+      );
+      return res.json(profile);
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({ message: err.issues[0]?.message || "Invalid profile details." });
+      }
+      if (err?.code === 11000) {
+        return res.status(409).json({ message: "That profile URL is already taken." });
+      }
+      console.error(err);
+      return res.status(500).json({ message: "Failed to save creator profile" });
+    }
+  });
+
+  app.get("/api/creators/handle/:handle", async (req, res) => {
+    try {
+      const handle = String(req.params.handle || "").trim().toLowerCase().replace(/^@+/, "");
+      const profile = await CreatorProfile.findOne({ handle });
+      if (!profile) return res.status(404).json({ message: "Creator profile not found" });
+
+      const products = await Product.find({
+        creatorWallet: profile.wallet,
+        status: "published",
+      }).sort({ createdAt: -1 });
+      const productById = new Map(products.map((product) => [String(product._id), product]));
+      const featuredProduct = profile.featuredProductId
+        ? productById.get(String(profile.featuredProductId)) ?? null
+        : null;
+      const collections = profile.collections
+        .sort((a, b) => a.order - b.order)
+        .map((collection) => ({
+          ...collection.toObject(),
+          products: collection.productIds
+            .map((productId) => productById.get(String(productId)))
+            .filter(Boolean),
+        }))
+        .filter((collection) => collection.products.length > 0);
+
+      return res.json({
+        ...profile.toObject(),
+        featuredProduct,
+        collections,
+        products,
+      });
+    } catch (err) {
+      console.error(err);
+      return res.status(500).json({ message: "Failed to load creator profile" });
     }
   });
 
