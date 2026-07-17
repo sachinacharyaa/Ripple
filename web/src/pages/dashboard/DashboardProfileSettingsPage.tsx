@@ -181,7 +181,7 @@ export function DashboardProfileSettingsPage() {
                   spellCheck={false}
                   autoComplete="username"
                   aria-describedby="creator-handle-hint"
-                  placeholder="sachin"
+                  placeholder="jhonsmith"
                   required
                 />
               </div>
