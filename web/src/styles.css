@@ -4459,14 +4459,6 @@ textarea {
   animation: milestoneSheen 3.5s linear infinite;
 }
 
-.milestone__footnote {
-  font-size: 0.95rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--purple-dark);
-}
-
 @keyframes milestoneAurora {
   0% {
     transform: translate3d(-4%, -2%, 0) scale(1);

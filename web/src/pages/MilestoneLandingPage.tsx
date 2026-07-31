@@ -146,14 +146,6 @@ export function MilestoneLandingPage() {
           </div>
         </motion.div>
 
-        <motion.p
-          className="milestone__footnote"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.6, delay: 1.5 }}
-        >
-          Mainnet launch coming soon
-        </motion.p>
       </section>
     </main>
   );
