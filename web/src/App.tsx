@@ -28,8 +28,12 @@ import { DashboardDiscoverPage } from "./pages/dashboard/DashboardDiscoverPage";
 import { DashboardPurchasesPage } from "./pages/dashboard/DashboardPurchasesPage";
 import { DashboardAdminPage } from "./pages/dashboard/DashboardAdminPage";
 import { DashboardProfileSettingsPage } from "./pages/dashboard/DashboardProfileSettingsPage";
+import { MilestoneLandingPage } from "./pages/MilestoneLandingPage";
 import { creatorInitials } from "./lib/creatorUtils";
 import type { PublicCreatorProfile } from "./types/creator";
+
+/** Devnet trade-volume cap is reached; serve only the milestone page until mainnet. */
+const MILESTONE_PAGE_ONLY: boolean = true;
 
 type Product = ProductShape;
 type AccessFile = {
@@ -987,6 +991,17 @@ export function App() {
   useEffect(() => {
     void syncTokensFromBackend();
   }, []);
+
+  if (MILESTONE_PAGE_ONLY) {
+    return (
+      <>
+        <RouteAnalyticsTracker />
+        <Routes>
+          <Route path="*" element={<MilestoneLandingPage />} />
+        </Routes>
+      </>
+    );
+  }
 
   return (
     <>
