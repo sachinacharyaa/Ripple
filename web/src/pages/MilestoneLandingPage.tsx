@@ -33,8 +33,6 @@ const STATS: Stat[] = [
   },
 ];
 
-const ORBS = [1, 2, 3, 4, 5];
-
 function useCountUp(target: number, durationMs: number) {
   const reduceMotion = useReducedMotion();
   const [value, setValue] = useState(0);
@@ -88,13 +86,6 @@ export function MilestoneLandingPage() {
     <main className="milestone">
       <div className="milestone__aurora" aria-hidden="true" />
       <div className="milestone__grid" aria-hidden="true" />
-      <div className="milestone__orbs" aria-hidden="true">
-        {ORBS.map((orb) => (
-          <span key={orb} className={`milestone-orb milestone-orb--${orb}`}>
-            R
-          </span>
-        ))}
-      </div>
 
       <section className="milestone__inner">
         <motion.p

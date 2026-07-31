@@ -4313,80 +4313,6 @@ textarea {
   mask-image: radial-gradient(circle at 50% 45%, #000 25%, transparent 75%);
 }
 
-.milestone__orbs {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-}
-
-.milestone-orb {
-  position: absolute;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  font-weight: 900;
-  color: var(--white);
-  background: linear-gradient(135deg, var(--purple-light), var(--purple));
-  border: 3px solid var(--ink);
-  box-shadow: 5px 6px 0 var(--ink);
-  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-  user-select: none;
-  animation: milestoneFloat var(--orb-dur, 12s) ease-in-out infinite;
-  animation-delay: var(--orb-delay, 0s);
-}
-
-.milestone-orb--1 {
-  --orb-dur: 13s;
-  --orb-delay: 0s;
-  width: 92px;
-  height: 92px;
-  font-size: 2.4rem;
-  top: 12%;
-  left: 8%;
-}
-
-.milestone-orb--2 {
-  --orb-dur: 10s;
-  --orb-delay: -3s;
-  width: 62px;
-  height: 62px;
-  font-size: 1.6rem;
-  top: 24%;
-  right: 11%;
-}
-
-.milestone-orb--3 {
-  --orb-dur: 15s;
-  --orb-delay: -6s;
-  width: 116px;
-  height: 116px;
-  font-size: 3rem;
-  bottom: 12%;
-  left: 13%;
-}
-
-.milestone-orb--4 {
-  --orb-dur: 11s;
-  --orb-delay: -2s;
-  width: 74px;
-  height: 74px;
-  font-size: 1.9rem;
-  bottom: 18%;
-  right: 9%;
-}
-
-.milestone-orb--5 {
-  --orb-dur: 14s;
-  --orb-delay: -8s;
-  width: 48px;
-  height: 48px;
-  font-size: 1.25rem;
-  top: 58%;
-  left: 4%;
-}
-
 .milestone__inner {
   position: relative;
   z-index: 1;
@@ -4553,16 +4479,6 @@ textarea {
   }
 }
 
-@keyframes milestoneFloat {
-  0%,
-  100% {
-    transform: translateY(0) rotate(-4deg);
-  }
-  50% {
-    transform: translateY(-26px) rotate(5deg);
-  }
-}
-
 @keyframes milestoneSheen {
   0%,
   100% {
@@ -4594,28 +4510,10 @@ textarea {
     grid-template-columns: 1fr;
     gap: 16px;
   }
-
-  .milestone-orb--1,
-  .milestone-orb--3,
-  .milestone-orb--5 {
-    display: none;
-  }
-
-  .milestone-orb--2 {
-    top: 6%;
-    right: 6%;
-  }
-
-  .milestone-orb--4 {
-    bottom: 6%;
-    left: 6%;
-    right: auto;
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .milestone__aurora,
-  .milestone-orb,
   .milestone__badge-dot,
   .milestone__title-accent,
   .milestone__progress-fill {
