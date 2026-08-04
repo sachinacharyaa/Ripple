@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { motion, useReducedMotion } from "framer-motion";
+import { api } from "../lib/api";
 
 type Stat = {
   id: string;
@@ -9,6 +10,9 @@ type Stat = {
   suffix?: string;
   caption: string;
 };
+
+const CONTACT_EMAIL = "thesachinacharya77@gmail.com";
+const DISCORD_URL = "https://discord.gg/THpac3zG5";
 
 const STATS: Stat[] = [
   {
@@ -81,6 +85,144 @@ function StatCard({ stat, index }: { stat: Stat; index: number }) {
   );
 }
 
+function ProductLeadForm() {
+  const [email, setEmail] = useState("");
+  const [productName, setProductName] = useState("");
+  const [oneLiner, setOneLiner] = useState("");
+  const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+  const [message, setMessage] = useState("");
+
+  const canSubmit =
+    email.trim().length > 3 && productName.trim().length >= 2 && oneLiner.trim().length >= 5;
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!canSubmit || status === "loading") return;
+
+    setStatus("loading");
+    setMessage("");
+
+    try {
+      const res = await api.post<{ success?: boolean; message?: string }>("/product-leads", {
+        email: email.trim(),
+        productName: productName.trim(),
+        oneLiner: oneLiner.trim(),
+      });
+      setStatus("success");
+      setMessage(res.data?.message || "Thanks — we received your product details.");
+      setEmail("");
+      setProductName("");
+      setOneLiner("");
+    } catch (error) {
+      const apiMessage =
+        error &&
+        typeof error === "object" &&
+        "response" in error &&
+        error.response &&
+        typeof error.response === "object" &&
+        "data" in error.response &&
+        error.response.data &&
+        typeof error.response.data === "object" &&
+        "message" in error.response.data
+          ? String((error.response.data as { message?: string }).message || "")
+          : "";
+      setStatus("error");
+      setMessage(apiMessage || "Could not send right now. Try again in a moment.");
+    }
+  };
+
+  return (
+    <form className="milestone-footer__form" onSubmit={handleSubmit}>
+      <div className="milestone-footer__form-head">
+        <h2>List your product later</h2>
+        <p>Drop your email, product name, and a one-liner. We&apos;ll reach out when listings reopen.</p>
+      </div>
+
+      <div className="milestone-footer__fields">
+        <label className="milestone-footer__field">
+          <span>Email</span>
+          <input
+            type="email"
+            name="email"
+            autoComplete="email"
+            placeholder="you@studio.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
+        </label>
+        <label className="milestone-footer__field">
+          <span>Product name</span>
+          <input
+            type="text"
+            name="productName"
+            placeholder="e.g. Solana prompt pack"
+            value={productName}
+            onChange={(e) => setProductName(e.target.value)}
+            maxLength={120}
+            required
+          />
+        </label>
+        <label className="milestone-footer__field milestone-footer__field--wide">
+          <span>One-liner</span>
+          <input
+            type="text"
+            name="oneLiner"
+            placeholder="What is it, in one short sentence?"
+            value={oneLiner}
+            onChange={(e) => setOneLiner(e.target.value)}
+            maxLength={280}
+            required
+          />
+        </label>
+      </div>
+
+      <div className="milestone-footer__form-actions">
+        <button type="submit" disabled={!canSubmit || status === "loading"}>
+          {status === "loading" ? "Sending…" : "Send details"}
+        </button>
+        {message ? (
+          <p
+            className={`milestone-footer__form-msg${
+              status === "error" ? " milestone-footer__form-msg--error" : ""
+            }`}
+            role="status"
+          >
+            {message}
+          </p>
+        ) : null}
+      </div>
+    </form>
+  );
+}
+
+function MilestoneFooter() {
+  return (
+    <motion.footer
+      className="milestone-footer"
+      initial={{ opacity: 0, y: 24 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.7, delay: 1.15, ease: "easeOut" }}
+    >
+      <div className="milestone-footer__glass">
+        <div className="milestone-footer__meta">
+          <p className="milestone-footer__brand">Rivo</p>
+          <p className="milestone-footer__note">
+            Devnet goal complete. Stay close for what comes next.
+          </p>
+          <div className="milestone-footer__links">
+            <a href={DISCORD_URL} target="_blank" rel="noreferrer">
+              Discord
+            </a>
+            <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>
+          </div>
+        </div>
+        <ProductLeadForm />
+      </div>
+    </motion.footer>
+  );
+}
+
 export function MilestoneLandingPage() {
   return (
     <main className="milestone">
@@ -145,8 +287,9 @@ export function MilestoneLandingPage() {
             />
           </div>
         </motion.div>
-
       </section>
+
+      <MilestoneFooter />
     </main>
   );
 }
