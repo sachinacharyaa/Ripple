@@ -214,7 +214,7 @@ function MilestoneFooter() {
             <a href={DISCORD_URL} target="_blank" rel="noreferrer">
               Discord
             </a>
-            <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>
+            <a href={`mailto:${CONTACT_EMAIL}`}>Email</a>
           </div>
         </div>
         <ProductLeadForm />
