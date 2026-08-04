@@ -193,11 +193,90 @@ const subscriberSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
+const productLeadSchema = new mongoose.Schema(
+  {
+    email: { type: String, required: true, trim: true, lowercase: true, index: true },
+    productName: { type: String, required: true, trim: true, maxlength: 120 },
+    oneLiner: { type: String, required: true, trim: true, maxlength: 280 },
+    notified: { type: Boolean, default: false },
+  },
+  { timestamps: true },
+);
+
 function getSubscriberModel() {
   if (!subscribersConnection) {
     throw new Error("Subscribers database is not connected");
   }
   return subscribersConnection.models.Subscriber || subscribersConnection.model("Subscriber", subscriberSchema);
+}
+
+function getProductLeadModel() {
+  if (!subscribersConnection) {
+    throw new Error("Subscribers database is not connected");
+  }
+  return (
+    subscribersConnection.models.ProductLead ||
+    subscribersConnection.model("ProductLead", productLeadSchema)
+  );
+}
+
+const CONTACT_INBOX = String(process.env.CONTACT_INBOX || "thesachinacharya77@gmail.com").trim();
+
+async function notifyProductLeadInbox({ email, productName, oneLiner }) {
+  const subject = `Rivo product listing interest: ${productName}`;
+  const text = [
+    "Someone wants to list a product on Rivo.",
+    "",
+    `Email: ${email}`,
+    `Product: ${productName}`,
+    `About: ${oneLiner}`,
+  ].join("\n");
+
+  const resendKey = String(process.env.RESEND_API_KEY || "").trim();
+  if (resendKey) {
+    const from = String(process.env.RESEND_FROM || "Rivo <onboarding@resend.dev>").trim();
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${resendKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from,
+        to: [CONTACT_INBOX],
+        reply_to: email,
+        subject,
+        text,
+      }),
+    });
+    if (!res.ok) {
+      const body = await res.text();
+      throw new Error(`Resend failed (${res.status}): ${body.slice(0, 200)}`);
+    }
+    return "resend";
+  }
+
+  // Zero-config fallback: FormSubmit forwards to Gmail (confirm once on first delivery).
+  const res = await fetch(`https://formsubmit.co/ajax/${encodeURIComponent(CONTACT_INBOX)}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    body: JSON.stringify({
+      name: productName,
+      email,
+      message: oneLiner,
+      _subject: subject,
+      _template: "table",
+      _replyto: email,
+    }),
+  });
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error(`FormSubmit failed (${res.status}): ${body.slice(0, 200)}`);
+  }
+  return "formsubmit";
 }
 
 const slugify = (value) =>
@@ -821,6 +900,56 @@ export function createApp() {
       }
       console.error(e);
       return res.status(500).json({ message: "Could not subscribe. Try again." });
+    }
+  });
+
+  // Milestone footer: future product listing interest → inbox + Mongo archive
+  app.post("/api/product-leads", async (req, res) => {
+    try {
+      await ensureSubscribersDbConnected();
+      const ProductLead = getProductLeadModel();
+
+      const email = String(req.body?.email || "")
+        .trim()
+        .toLowerCase();
+      const productName = String(req.body?.productName || "").trim();
+      const oneLiner = String(req.body?.oneLiner || "").trim();
+
+      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        return res.status(400).json({ message: "A valid email is required." });
+      }
+      if (productName.length < 2 || productName.length > 120) {
+        return res.status(400).json({ message: "Product name must be 2–120 characters." });
+      }
+      if (oneLiner.length < 5 || oneLiner.length > 280) {
+        return res.status(400).json({ message: "One-liner must be 5–280 characters." });
+      }
+
+      const lead = await ProductLead.create({ email, productName, oneLiner, notified: false });
+
+      try {
+        await notifyProductLeadInbox({ email, productName, oneLiner });
+        lead.notified = true;
+        await lead.save();
+      } catch (notifyError) {
+        console.error("product-lead notify failed", notifyError);
+        return res.status(201).json({
+          success: true,
+          message: "Saved. Email delivery is still warming up — we'll follow up from the inbox.",
+        });
+      }
+
+      return res.status(201).json({
+        success: true,
+        message: "Thanks — we received your product details.",
+      });
+    } catch (e) {
+      if (e?.message?.includes("SUBSCRIBERS_MONGODB_URI")) {
+        console.error(e);
+        return res.status(503).json({ message: "Product listings are not configured yet." });
+      }
+      console.error(e);
+      return res.status(500).json({ message: "Could not send your details. Try again." });
     }
   });
 
